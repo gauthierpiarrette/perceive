@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: closed drawer still in DOM</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; margin: 0; overflow-x: hidden; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100vh;
+      background: #f0f0f0;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      padding: 1rem;
+    }
+    .drawer.open {
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+  <h1>07 &mdash; closed drawer pattern (Ant Design Vue v1.7.8)</h1>
+  <p>The drawer is closed (translated off-screen) but its content is still in the DOM and in the accessibility tree.
+     This is the pattern that caused an AI agent infinite-retry loop in <a href="https://github.com/microsoft/playwright/issues/39955">Playwright issue #39955</a>.</p>
+  <button data-bench-id="btn-open">Open Drawer</button>
+  <div class="drawer" id="drawer">
+    <h2>Drawer Content</h2>
+    <button data-bench-id="btn-drawer-close">Close Drawer</button>
+    <button data-bench-id="btn-drawer-submit">Submit Form</button>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "07_closed_drawer",
+    "category": "positioning",
+    "description": "Closed drawer (transform translateX(100%)) still in DOM; its contents must not be reachable",
+    "elements": [
+      { "bench_id": "btn-open",          "role": "button", "name": "Open Drawer",   "reachable": true },
+      { "bench_id": "btn-drawer-close",  "role": "button", "name": "Close Drawer",  "reachable": false, "reason": "ancestor drawer is translated off-screen" },
+      { "bench_id": "btn-drawer-submit", "role": "button", "name": "Submit Form",   "reachable": false, "reason": "ancestor drawer is translated off-screen" }
+    ]
+  }
+  </script>
+</body>
+</html>

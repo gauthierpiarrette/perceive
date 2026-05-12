@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: offscreen transform</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; margin: 0; overflow: hidden; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .offscreen { transform: translateX(200vw); position: absolute; }
+  </style>
+</head>
+<body>
+  <h1>05 &mdash; offscreen transform</h1>
+  <p>The "Hidden" button is moved 200vw to the right via <code>transform</code>; it cannot be scrolled into view
+     because the body has <code>overflow:hidden</code>.</p>
+  <button data-bench-id="btn-onscreen">Onscreen Button</button>
+  <button data-bench-id="btn-offscreen" class="offscreen">Offscreen Button</button>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "05_offscreen_transform",
+    "category": "positioning",
+    "description": "Element moved off-page by transform must not be reachable",
+    "elements": [
+      { "bench_id": "btn-onscreen",  "role": "button", "name": "Onscreen Button",  "reachable": true },
+      { "bench_id": "btn-offscreen", "role": "button", "name": "Offscreen Button", "reachable": false, "reason": "transform translateX(200vw) with body overflow:hidden" }
+    ]
+  }
+  </script>
+</body>
+</html>

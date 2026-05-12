@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0",
+  "pages": [
+    { "id": "01_display_none",          "file": "01_display_none.html",          "category": "css_hiding" },
+    { "id": "02_visibility_hidden",     "file": "02_visibility_hidden.html",     "category": "css_hiding" },
+    { "id": "03_opacity_zero",          "file": "03_opacity_zero.html",          "category": "css_hiding" },
+    { "id": "04_pointer_events_none",   "file": "04_pointer_events_none.html",   "category": "non_interactive" },
+    { "id": "05_offscreen_transform",   "file": "05_offscreen_transform.html",   "category": "positioning" },
+    { "id": "06_parent_overflow_clipped","file": "06_parent_overflow_clipped.html","category": "ancestor_clip" },
+    { "id": "07_closed_drawer",         "file": "07_closed_drawer.html",         "category": "positioning" },
+    { "id": "08_modal_occlusion",       "file": "08_modal_occlusion.html",       "category": "occlusion" },
+    { "id": "09_sticky_header_overlap", "file": "09_sticky_header_overlap.html", "category": "occlusion" },
+    { "id": "10_inert_subtree",         "file": "10_inert_subtree.html",         "category": "ancestor_attribute" },
+    { "id": "11_aria_hidden_cascade",   "file": "11_aria_hidden_cascade.html",   "category": "ancestor_attribute" },
+    { "id": "12_disabled_controls",     "file": "12_disabled_controls.html",     "category": "non_interactive" },
+    { "id": "13_shadow_dom",            "file": "13_shadow_dom.html",            "category": "traversal" },
+    { "id": "14_iframe",                "file": "14_iframe.html",                "category": "traversal" }
+  ]
+}

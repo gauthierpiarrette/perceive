@@ -1,0 +1,76 @@
+[project]
+name = "perceive"
+version = "0.1.0"
+description = "Compact, ref-stable, reachability-filtered perception for AI browser agents"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Gauthier Piarrette" }]
+license = { text = "Apache-2.0" }
+keywords = ["ai", "agent", "browser", "automation", "accessibility", "perception", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "playwright>=1.45",
+]
+
+[project.urls]
+Homepage = "https://github.com/gauthierpiarrette/perceive"
+Repository = "https://github.com/gauthierpiarrette/perceive"
+Issues = "https://github.com/gauthierpiarrette/perceive/issues"
+Documentation = "https://github.com/gauthierpiarrette/perceive#readme"
+
+[project.optional-dependencies]
+bench = [
+    "tiktoken>=0.7",
+]
+dev = [
+    "pytest>=7",
+    "tiktoken>=0.7",
+]
+
+[project.scripts]
+perceive-bench = "bench.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["perceive", "bench"]
+# bench/pages/*.{html,json} are picked up via include below.
+
+[tool.hatch.build.targets.wheel.shared-data]
+# (no shared data)
+
+[tool.hatch.build]
+include = [
+    "perceive/**/*.py",
+    "bench/**/*.py",
+    "bench/pages/*.html",
+    "bench/pages/*.json",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/perceive",
+    "/bench",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/NOTICE",
+    "/SPEC.md",
+    "/pyproject.toml",
+]

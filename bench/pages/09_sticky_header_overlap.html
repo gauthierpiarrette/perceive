@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: sticky header overlap</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 0; max-width: 720px; margin: 0; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .sticky-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 120px;
+      background: rgba(50, 100, 200, 0.95);
+      color: white;
+      padding: 1rem;
+      z-index: 100;
+    }
+    .content {
+      padding-top: 10px; /* deliberately too little */
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+    .covered {
+      position: relative;
+      top: 10px; /* will be under the 120px sticky header */
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-header">
+    <h1>Sticky Header</h1>
+    <p>This header overlaps content positioned in the top 120px.</p>
+  </div>
+  <div class="content">
+    <button data-bench-id="btn-covered" class="covered">Covered Button</button>
+    <div style="height: 200px"></div>
+    <button data-bench-id="btn-clear">Clear Button</button>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "09_sticky_header_overlap",
+    "category": "occlusion",
+    "description": "Button beneath a sticky header is occluded at default scroll position",
+    "elements": [
+      { "bench_id": "btn-covered", "role": "button", "name": "Covered Button", "reachable": false, "reason": "occluded by sticky header at default scroll" },
+      { "bench_id": "btn-clear",   "role": "button", "name": "Clear Button",   "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>

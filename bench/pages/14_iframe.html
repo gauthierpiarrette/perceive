@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: same-origin iframe</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    iframe { width: 100%; height: 200px; border: 1px solid #999; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>14 &mdash; same-origin iframe</h1>
+  <p>The iframe below contains additional buttons. A perception layer must recurse into same-origin iframes
+     and discover their elements.</p>
+
+  <button data-bench-id="btn-top">Top Frame Button</button>
+
+  <iframe
+    srcdoc='<!DOCTYPE html><html><body style="font-family:system-ui;padding:1rem">
+              <button data-bench-id="btn-iframe-1">Iframe Save</button>
+              <button data-bench-id="btn-iframe-2">Iframe Discard</button>
+            </body></html>'>
+  </iframe>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "14_iframe",
+    "category": "traversal",
+    "description": "Buttons inside a same-origin iframe must be reachable and discovered",
+    "elements": [
+      { "bench_id": "btn-top",       "role": "button", "name": "Top Frame Button", "reachable": true },
+      { "bench_id": "btn-iframe-1",  "role": "button", "name": "Iframe Save",      "reachable": true, "in_iframe": true },
+      { "bench_id": "btn-iframe-2",  "role": "button", "name": "Iframe Discard",   "reachable": true, "in_iframe": true }
+    ]
+  }
+  </script>
+</body>
+</html>

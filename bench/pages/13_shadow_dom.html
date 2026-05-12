@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: open shadow DOM</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>13 &mdash; open shadow DOM</h1>
+  <p>The card below contains its content in an open shadow root. A perception layer must traverse shadow roots
+     to find interactable elements.</p>
+
+  <button data-bench-id="btn-light">Light DOM Button</button>
+
+  <my-card></my-card>
+
+  <script>
+    class MyCard extends HTMLElement {
+      connectedCallback() {
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.innerHTML = `
+          <style>
+            button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+            .card { border: 1px solid #999; padding: 1rem; margin-top: 1rem; }
+          </style>
+          <div class="card">
+            <h2>Shadow Card</h2>
+            <button data-bench-id="btn-shadow-1">Shadow Save</button>
+            <button data-bench-id="btn-shadow-2">Shadow Delete</button>
+          </div>
+        `;
+      }
+    }
+    customElements.define('my-card', MyCard);
+  </script>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "13_shadow_dom",
+    "category": "traversal",
+    "description": "Buttons inside an open shadow root must be reachable and discovered",
+    "elements": [
+      { "bench_id": "btn-light",    "role": "button", "name": "Light DOM Button", "reachable": true },
+      { "bench_id": "btn-shadow-1", "role": "button", "name": "Shadow Save",       "reachable": true, "in_shadow_dom": true },
+      { "bench_id": "btn-shadow-2", "role": "button", "name": "Shadow Delete",     "reachable": true, "in_shadow_dom": true }
+    ]
+  }
+  </script>
+</body>
+</html>

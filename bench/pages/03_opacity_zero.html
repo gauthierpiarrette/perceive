@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: opacity:0</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .css-hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <h1>03 &mdash; opacity:0</h1>
+  <p>The button with <code>opacity:0</code> is invisible to users; a perception layer should mark it unreachable
+     even though it is technically clickable via CSS.</p>
+  <button data-bench-id="btn-visible">Visible Button</button>
+  <button data-bench-id="btn-hidden" class="css-hidden">Invisible Button</button>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "03_opacity_zero",
+    "category": "css_hiding",
+    "description": "opacity:0 must not be reachable (user cannot see it)",
+    "elements": [
+      { "bench_id": "btn-visible", "role": "button", "name": "Visible Button",   "reachable": true },
+      { "bench_id": "btn-hidden",  "role": "button", "name": "Invisible Button", "reachable": false, "reason": "opacity:0" }
+    ]
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: disabled controls</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>12 &mdash; disabled controls</h1>
+  <p>Buttons with the <code>disabled</code> attribute or <code>aria-disabled="true"</code> are visible in the tree
+     but do not respond to clicks. They are <em>not actionable</em> and an agent should not target them.</p>
+
+  <button data-bench-id="btn-enabled">Enabled Button</button>
+  <button data-bench-id="btn-disabled" disabled>Disabled Button</button>
+  <button data-bench-id="btn-aria-disabled" aria-disabled="true">ARIA-disabled Button</button>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "12_disabled_controls",
+    "category": "non_interactive",
+    "description": "Disabled controls must not be reachable (not actionable)",
+    "elements": [
+      { "bench_id": "btn-enabled",        "role": "button", "name": "Enabled Button",        "reachable": true },
+      { "bench_id": "btn-disabled",       "role": "button", "name": "Disabled Button",       "reachable": false, "reason": "disabled attribute" },
+      { "bench_id": "btn-aria-disabled",  "role": "button", "name": "ARIA-disabled Button",  "reachable": false, "reason": "aria-disabled=true" }
+    ]
+  }
+  </script>
+</body>
+</html>

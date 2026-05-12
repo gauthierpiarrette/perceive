@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: pointer-events:none</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .no-events { pointer-events: none; opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <h1>04 &mdash; pointer-events:none</h1>
+  <p>The button with <code>pointer-events: none</code> is visible but does not accept clicks.</p>
+  <button data-bench-id="btn-clickable">Clickable Button</button>
+  <button data-bench-id="btn-no-events" class="no-events">No Events Button</button>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "04_pointer_events_none",
+    "category": "non_interactive",
+    "description": "pointer-events:none must not be reachable",
+    "elements": [
+      { "bench_id": "btn-clickable", "role": "button", "name": "Clickable Button", "reachable": true },
+      { "bench_id": "btn-no-events", "role": "button", "name": "No Events Button", "reachable": false, "reason": "pointer-events:none" }
+    ]
+  }
+  </script>
+</body>
+</html>

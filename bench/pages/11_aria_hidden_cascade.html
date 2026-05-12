@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: aria-hidden cascade</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>11 &mdash; aria-hidden cascade</h1>
+  <p>Elements inside an <code>aria-hidden="true"</code> ancestor are removed from the accessibility tree
+     for screen readers and should not be reachable by an agent.</p>
+
+  <button data-bench-id="btn-active">Active Button</button>
+
+  <div aria-hidden="true">
+    <h2>Hidden Region</h2>
+    <button data-bench-id="btn-aria-1">Hidden Action 1</button>
+    <button data-bench-id="btn-aria-2">Hidden Action 2</button>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "11_aria_hidden_cascade",
+    "category": "ancestor_attribute",
+    "description": "Buttons inside an aria-hidden=true ancestor must not be reachable",
+    "elements": [
+      { "bench_id": "btn-active", "role": "button", "name": "Active Button",   "reachable": true },
+      { "bench_id": "btn-aria-1", "role": "button", "name": "Hidden Action 1", "reachable": false, "reason": "ancestor aria-hidden=true" },
+      { "bench_id": "btn-aria-2", "role": "button", "name": "Hidden Action 2", "reachable": false, "reason": "ancestor aria-hidden=true" }
+    ]
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: visibility:hidden</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .css-hidden { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>02 &mdash; visibility:hidden</h1>
+  <p>The button below with <code>visibility:hidden</code> occupies space but is invisible and not interactable.</p>
+  <button data-bench-id="btn-visible">Visible Button</button>
+  <button data-bench-id="btn-hidden" class="css-hidden">Hidden Button</button>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "02_visibility_hidden",
+    "category": "css_hiding",
+    "description": "visibility:hidden must not be reachable",
+    "elements": [
+      { "bench_id": "btn-visible", "role": "button", "name": "Visible Button", "reachable": true },
+      { "bench_id": "btn-hidden",  "role": "button", "name": "Hidden Button",  "reachable": false, "reason": "visibility:hidden" }
+    ]
+  }
+  </script>
+</body>
+</html>

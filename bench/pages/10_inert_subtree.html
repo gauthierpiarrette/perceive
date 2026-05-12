@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: inert subtree</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>10 &mdash; inert subtree</h1>
+  <p>Per the HTML spec, elements inside an <code>inert</code> subtree cannot be interacted with.
+     This is also the canonical pattern from <a href="https://github.com/microsoft/playwright/issues/36938">Playwright issue #36938</a>.</p>
+
+  <button data-bench-id="btn-active">Active Button</button>
+
+  <form inert>
+    <h2>Inert Form</h2>
+    <button data-bench-id="btn-inert-1">Inert Submit</button>
+    <button data-bench-id="btn-inert-2">Inert Cancel</button>
+  </form>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "10_inert_subtree",
+    "category": "ancestor_attribute",
+    "description": "Buttons inside an inert subtree must not be reachable",
+    "elements": [
+      { "bench_id": "btn-active",  "role": "button", "name": "Active Button", "reachable": true },
+      { "bench_id": "btn-inert-1", "role": "button", "name": "Inert Submit",  "reachable": false, "reason": "ancestor has inert attribute" },
+      { "bench_id": "btn-inert-2", "role": "button", "name": "Inert Cancel",  "reachable": false, "reason": "ancestor has inert attribute" }
+    ]
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: modal occlusion</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; margin: 0; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+    }
+    .modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      z-index: 1001;
+      min-width: 280px;
+    }
+    .page-content {
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-content">
+    <h1>08 &mdash; modal occlusion</h1>
+    <p>A modal is open. The buttons behind it should not be reachable until the modal closes.</p>
+    <button data-bench-id="btn-behind-1">Behind Button 1</button>
+    <button data-bench-id="btn-behind-2">Behind Button 2</button>
+  </div>
+
+  <div class="modal-backdrop"></div>
+  <div class="modal">
+    <h2>Login</h2>
+    <button data-bench-id="btn-modal-ok">OK</button>
+    <button data-bench-id="btn-modal-cancel">Cancel</button>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "08_modal_occlusion",
+    "category": "occlusion",
+    "description": "Buttons behind a modal backdrop must not be reachable; modal buttons must be reachable",
+    "elements": [
+      { "bench_id": "btn-behind-1",    "role": "button", "name": "Behind Button 1", "reachable": false, "reason": "occluded by modal backdrop" },
+      { "bench_id": "btn-behind-2",    "role": "button", "name": "Behind Button 2", "reachable": false, "reason": "occluded by modal backdrop" },
+      { "bench_id": "btn-modal-ok",     "role": "button", "name": "OK",              "reachable": true },
+      { "bench_id": "btn-modal-cancel", "role": "button", "name": "Cancel",          "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>

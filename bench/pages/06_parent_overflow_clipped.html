@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: parent overflow clipped</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 720px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .clipped-parent {
+      overflow: hidden;
+      width: 0;
+      height: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>06 &mdash; parent overflow:hidden, zero size</h1>
+  <p>The button inside a parent with <code>overflow:hidden</code> and zero size cannot be seen or clicked.</p>
+  <button data-bench-id="btn-normal">Normal Button</button>
+  <div class="clipped-parent">
+    <button data-bench-id="btn-clipped">Clipped Button</button>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "06_parent_overflow_clipped",
+    "category": "ancestor_clip",
+    "description": "Button inside zero-size overflow:hidden parent must not be reachable",
+    "elements": [
+      { "bench_id": "btn-normal",  "role": "button", "name": "Normal Button",  "reachable": true },
+      { "bench_id": "btn-clipped", "role": "button", "name": "Clipped Button", "reachable": false, "reason": "ancestor overflow:hidden with zero size" }
+    ]
+  }
+  </script>
+</body>
+</html>
