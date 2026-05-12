@@ -26,7 +26,10 @@
   <h1>07 &mdash; closed drawer pattern (Ant Design Vue v1.7.8)</h1>
   <p>The drawer is closed (translated off-screen) but its content is still in the DOM and in the accessibility tree.
      This is the pattern that caused an AI agent infinite-retry loop in <a href="https://github.com/microsoft/playwright/issues/39955">Playwright issue #39955</a>.</p>
-  <button data-bench-id="btn-open">Open Drawer</button>
+  <button data-bench-id="btn-open"
+          onclick="document.getElementById('drawer').classList.toggle('open')">
+    Open Drawer
+  </button>
   <div class="drawer" id="drawer">
     <h2>Drawer Content</h2>
     <button data-bench-id="btn-drawer-close">Close Drawer</button>

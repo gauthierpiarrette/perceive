@@ -190,20 +190,30 @@ COLLECT_JS = (
         }
 
         // 6. Ancestor overflow-clip rejection: element outside its clipping rect.
+        //    position:fixed elements are rendered relative to the viewport and
+        //    truly escape ancestor overflow (e.g. a fixed-positioned drawer
+        //    inside a body with overflow-x:hidden). position:absolute does NOT
+        //    escape in practice — body/html overflow still clips it visually.
+        //    Once we walk past a fixed ancestor, descendants inherit that
+        //    escape, so further ancestors' clipping is also skipped.
+        let crossedFixed = (getComputedStyle(el).position === 'fixed');
         for (let a = nextAncestor(el); a; a = nextAncestor(a)) {
           if (a === document || a === document.documentElement) break;
           const cs = getComputedStyle(a);
-          if (
+          if (!crossedFixed && (
             cs.overflow === 'hidden' || cs.overflow === 'clip' ||
             cs.overflowX === 'hidden' || cs.overflowX === 'clip' ||
             cs.overflowY === 'hidden' || cs.overflowY === 'clip'
-          ) {
+          )) {
             const ar = a.getBoundingClientRect();
             const er = el.getBoundingClientRect();
             if (er.right <= ar.left || er.left >= ar.right ||
                 er.bottom <= ar.top || er.top >= ar.bottom) {
               return false;
             }
+          }
+          if (cs.position === 'fixed') {
+            crossedFixed = true;
           }
         }
 
