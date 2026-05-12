@@ -1,6 +1,6 @@
 [project]
 name = "perceive"
-version = "0.1.0"
+version = "0.1.1"
 description = "Compact, ref-stable, reachability-filtered perception for AI browser agents"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,10 +17,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Topic :: Internet :: WWW/HTTP :: Browsers",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Testing",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "playwright>=1.45",

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-13
+
 ### Fixed
 - Reachability algorithm: a `position:fixed` ancestor (e.g. a slide-in drawer) now correctly propagates its escape from ancestor `overflow:hidden` clipping to its static descendants. Previously, content inside a fixed-positioned drawer was wrongly flagged unreachable when the body had `overflow-x:hidden`, even after the drawer opened. Algorithm change in `perceive/_js.py`; bench remains at P=R=F1=1.000.
 
@@ -36,4 +38,5 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.1.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/gauthierpiarrette/perceive/releases/tag/v0.1.0
