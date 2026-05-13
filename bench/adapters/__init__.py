@@ -27,9 +27,15 @@ def _perceive_loader():
     return PerceiveAdapter
 
 
+def _playwright_mcp_loader():
+    from bench.adapters.playwright_mcp import PlaywrightMCPAdapter
+    return PlaywrightMCPAdapter
+
+
 REGISTRY: dict[str, Callable[[], type[PerceptionAdapter]]] = {
     "playwright_baseline": _lazy(_playwright_baseline_loader),
     "playwright_filtered": _lazy(_playwright_filtered_loader),
+    "playwright_mcp": _lazy(_playwright_mcp_loader),
     "perceive": _lazy(_perceive_loader),
 }
 

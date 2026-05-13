@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-13
+
+### Added
+- **Playwright MCP bench adapter** (`bench/adapters/playwright_mcp.py`) — drives Microsoft's `@playwright/mcp` server via stdio JSON-RPC. Subprocess-per-page, matching the isolation pattern of the other bench adapters. Requires Node.js + `npx`; override the binary with `PERCEIVE_NPX`, the first-run timeout with `PERCEIVE_MCP_TIMEOUT`.
+- **Snapshot parser** for Playwright MCP's YAML-ish aria-tree output (`_parse_snapshot`), with parser-level unit tests in `tests/test_playwright_mcp_parser.py`. The parser is liberal — any line with a `[ref=...]` tag is captured — but drops unnamed structural roles so they do not pollute the matcher.
+
+### Benchmark — first head-to-head
+
+| Adapter | Precision | Recall | F1 | False positives (36) | Median tokens / page |
+|---|---:|---:|---:|---:|---:|
+| Raw a11y baseline | 0.528 | 1.000 | 0.691 | 17 | 21.5 |
+| Playwright MCP (`@playwright/mcp`) | 0.613 | 1.000 | 0.760 | 12 | 180.5 |
+| `perceive` | 1.000 | 1.000 | 1.000 | 0 | 8.0 |
+
+Playwright MCP correctly filters elements the underlying Chromium accessibility tree already excludes (`display:none`, `visibility:hidden`, `pointer-events:none`, `disabled`, `shadow_dom`, `iframe`). The 12 false positives are concentrated on patterns the a11y tree alone cannot resolve — modal occlusion (pages 7, 8, 9), off-screen transform (pages 5, 6), inert subtrees (pages 10, 11), and the `opacity:0` edge (page 3) — i.e. exactly the patterns documented in Playwright issue #39955.
+
 ## [0.2.1] — 2026-05-13
 
 ### Fixed
@@ -78,7 +94,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
-[0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
+[0.3.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.2...v0.1.3

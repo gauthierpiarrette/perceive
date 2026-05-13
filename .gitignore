@@ -9,3 +9,4 @@ build/
 results/*.json
 !results/.gitkeep
 .DS_Store
+.playwright-mcp/

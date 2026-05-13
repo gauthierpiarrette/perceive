@@ -17,18 +17,25 @@ with perceive.browser(url="https://example.com") as t:
 
 ## Benchmark results
 
-Measured on a 14-page hand-labeled reachability conformance suite (`bench/`).
+Measured on a 14-page hand-labeled reachability conformance suite (`bench/`). Same machine, same Chromium build, same 36 ground-truth elements: **Playwright MCP surfaces 12 elements an agent cannot actually interact with; `perceive` surfaces 0.**
 
-The baseline is intentionally simple: it returns raw accessibility candidates without a reachability pass. This models the failure pattern documented in [Playwright issue #39955](https://github.com/microsoft/playwright/issues/39955): elements may appear in an accessibility snapshot even when they are hidden, inert, off-screen, or occluded.
+| Adapter | Precision | Recall | F1 | False positives | Median tokens / page | Median latency |
+|---|---:|---:|---:|---:|---:|---:|
+| Raw a11y baseline (no reachability filtering) | 0.528 | 1.000 | 0.691 | 17 / 36 | 21.5 | — |
+| Playwright MCP (`@playwright/mcp`) | 0.613 | 1.000 | 0.760 | 12 / 36 | 180.5 | 6030 ms |
+| **`perceive`** | **1.000** | **1.000** | **1.000** | **0 / 36** | **8.0** | **~150 ms** |
 
-Direct adapters for Playwright MCP, Chrome DevTools MCP, and Vercel agent-browser are not implemented yet, so these are not head-to-head claims against those tools.
+*Latency is per-call wall time; both adapters launch a fresh browser process per page (the bench isolates each call). A long-lived MCP server would amortize subprocess startup across many calls, so the latency gap on warm-state usage is smaller than the cold-start numbers above. The token and false-positive numbers are unaffected.*
 
-| Adapter | Precision | Recall | F1 | False positives | Median `to_prompt()` tokens / page |
-|---|---:|---:|---:|---:|---:|
-| Raw a11y baseline (no reachability filtering) | 0.528 | 1.000 | 0.691 | 17 / 36 | 21.5 |
-| **`perceive`** | **1.000** | **1.000** | **1.000** | **0 / 36** | **8.0** |
+Each false positive is an element an AI agent may try to click and fail on — the failure pattern documented in [Playwright issue #39955](https://github.com/microsoft/playwright/issues/39955).
 
-Each false positive in the baseline is an element an AI agent may try to click and fail on. Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
+Playwright MCP already filters elements Chromium's accessibility tree excludes (CSS-hidden such as `display:none` / `visibility:hidden`, plus disabled controls and most non-focusable elements), so it beats the raw baseline by 5 false positives. The remaining 12 fall into the patterns the accessibility tree alone cannot resolve: modal occlusion, sticky-header overlap, off-screen transforms, `inert` subtrees, and `aria-hidden` cascades. `perceive` performs an explicit reachability pass over these, eliminating them all.
+
+Determinism: 1.000 mean exact-match rate for `perceive` across 14 pages × 5 runs each.
+
+**Scope of claim.** This is a reachability conformance benchmark, not a general claim about Playwright. Playwright remains the underlying execution layer that `perceive`'s browser backend builds on; this benchmark measures the *observation* layer — what an agent sees before it decides what to do.
+
+Adapters for Chrome DevTools MCP and Vercel agent-browser are still on the roadmap.
 
 ## Install
 
