@@ -82,7 +82,7 @@ class State:
     context: str                   # URL for browser, bundle_id for macos
     captured_at: datetime
     viewport: Optional[Bounds] = None
-    text: Optional[str] = None     # populated when include_text=True
+    text: Optional[str] = None     # reserved; future text-content capture
     tokens_estimate: int = 0       # of to_prompt() output
 
     def __iter__(self) -> Iterator[Element]:

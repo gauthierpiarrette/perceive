@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-13
+
+### Fixed
+- Docstring and README comments around `include_text=True` no longer claim it is "reserved for v0.2" — v0.2.0 shipped without it. The flag is still accepted (for forward-compat) but unimplemented; the wording now says "reserved; not yet implemented" so the public surface matches runtime behavior. Pure documentation change; no code paths affected.
+
 ## [0.2.0] — 2026-05-13
 
 ### Added
@@ -73,6 +78,8 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
+[0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.1...v0.1.2

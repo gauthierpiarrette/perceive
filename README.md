@@ -144,7 +144,7 @@ target.close()                                  # or use as a context manager
 state = target.perceive(
     region=None,                # CSS selector or (x, y, w, h) bbox to scope
     role=None,                  # filter to a single role (e.g. "button")
-    include_text=False,         # reserved for v0.2
+    include_text=False,         # reserved; not yet implemented
     include_unreachable=False,  # default: filter unreachable
 )
 

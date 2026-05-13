@@ -108,8 +108,9 @@ class BrowserTarget:
             region: A CSS selector or ``(x, y, w, h)`` viewport-bbox to scope
                 the capture. Reduces the token cost on large pages.
             role: Filter elements to a single role (e.g. ``"button"``).
-            include_text: Reserved for future text-content capture. v0.1 just
-                exposes the flag so callers can opt-in once supported.
+            include_text: Reserved for a future release. The flag is accepted
+                but currently does not populate ``state.text``; design and
+                implementation are deferred until the v0.x roadmap reaches it.
             include_unreachable: When True, unreachable elements are returned
                 with ``reachable=False`` instead of being filtered out.
         """
@@ -147,7 +148,7 @@ class BrowserTarget:
             context=raw["url"],
             captured_at=datetime.now(timezone.utc),
             viewport=Bounds(0, 0, vw, vh),
-            text=None,  # include_text reserved for v0.2
+            text=None,  # include_text not yet implemented; deferred
         )
         state.tokens_estimate = _estimate_tokens(state)
         return state
