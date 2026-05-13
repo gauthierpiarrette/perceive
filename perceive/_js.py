@@ -178,40 +178,55 @@ COLLECT_JS = (
 
       // ---------- reachability (SPEC §7.3) ----------
 
+      // Returns null when the element is reachable, or {reason: '<slug>'}
+      // when it is filtered out. Reason slugs are stable, lowercase
+      // snake_case identifiers and form part of the public API via
+      // Element.unreachable_reason.
       function isReachable(el) {
-        if (!el.isConnected) return false;
+        if (!el.isConnected) return { reason: 'not_in_document' };
 
-        // 1. CSS visibility.
+        // 1. CSS visibility. Probe specific properties first so the reason
+        //    points at the actual cause; checkVisibility() catches remaining
+        //    cases (e.g. content-visibility:hidden) the explicit checks miss.
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none') return { reason: 'display_none' };
+        if (cs.visibility === 'hidden' || cs.visibility === 'collapse') {
+          return { reason: 'visibility_hidden' };
+        }
+        if (parseFloat(cs.opacity) === 0) return { reason: 'opacity_zero' };
         if (typeof el.checkVisibility === 'function') {
-          if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
-        } else {
-          const cs = getComputedStyle(el);
-          if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) {
-            return false;
+          if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+            return { reason: 'css_hidden' };
           }
         }
 
         // 2. Non-zero bounding rect.
         const rect = el.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) return false;
+        if (rect.width <= 0 || rect.height <= 0) return { reason: 'zero_bounds' };
 
         // 3. Disabled.
-        if (el.disabled === true) return false;
-        if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') return false;
+        if (el.disabled === true) return { reason: 'disabled' };
+        if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') {
+          return { reason: 'disabled' };
+        }
 
-        // 4. inert / aria-hidden cascade (crossing shadow boundaries).
+        // 4. inert / aria-hidden cascade. inert wins over aria-hidden when
+        //    both apply — inert is the stronger semantic ("not interactive
+        //    at all") and is the reason an agent should prefer to surface.
         for (let a = el; a; a = nextAncestor(a)) {
           if (a === document) break;
-          if (a.hasAttribute && a.hasAttribute('inert')) return false;
-          if (a.inert === true) return false;
-          if (a.getAttribute && a.getAttribute('aria-hidden') === 'true') return false;
+          if (a.hasAttribute && a.hasAttribute('inert')) return { reason: 'inert' };
+          if (a.inert === true) return { reason: 'inert' };
+          if (a.getAttribute && a.getAttribute('aria-hidden') === 'true') {
+            return { reason: 'aria_hidden' };
+          }
         }
 
         // 5. pointer-events: none on self or ancestor.
         for (let a = el; a; a = nextAncestor(a)) {
           if (a === document) break;
-          const cs = getComputedStyle(a);
-          if (cs && cs.pointerEvents === 'none') return false;
+          const acs = getComputedStyle(a);
+          if (acs && acs.pointerEvents === 'none') return { reason: 'pointer_events_none' };
         }
 
         // 6. Ancestor overflow-clip rejection: element outside its clipping rect.
@@ -221,23 +236,23 @@ COLLECT_JS = (
         //    escape in practice — body/html overflow still clips it visually.
         //    Once we walk past a fixed ancestor, descendants inherit that
         //    escape, so further ancestors' clipping is also skipped.
-        let crossedFixed = (getComputedStyle(el).position === 'fixed');
+        let crossedFixed = (cs.position === 'fixed');
         for (let a = nextAncestor(el); a; a = nextAncestor(a)) {
           if (a === document || a === document.documentElement) break;
-          const cs = getComputedStyle(a);
+          const acs = getComputedStyle(a);
           if (!crossedFixed && (
-            cs.overflow === 'hidden' || cs.overflow === 'clip' ||
-            cs.overflowX === 'hidden' || cs.overflowX === 'clip' ||
-            cs.overflowY === 'hidden' || cs.overflowY === 'clip'
+            acs.overflow === 'hidden' || acs.overflow === 'clip' ||
+            acs.overflowX === 'hidden' || acs.overflowX === 'clip' ||
+            acs.overflowY === 'hidden' || acs.overflowY === 'clip'
           )) {
             const ar = a.getBoundingClientRect();
             const er = el.getBoundingClientRect();
             if (er.right <= ar.left || er.left >= ar.right ||
                 er.bottom <= ar.top || er.top >= ar.bottom) {
-              return false;
+              return { reason: 'clipped_by_ancestor' };
             }
           }
-          if (cs.position === 'fixed') {
+          if (acs.position === 'fixed') {
             crossedFixed = true;
           }
         }
@@ -248,7 +263,7 @@ COLLECT_JS = (
         const cx = r2.x + r2.width / 2;
         const cy = r2.y + r2.height / 2;
         if (cx < 0 || cx >= window.innerWidth || cy < 0 || cy >= window.innerHeight) {
-          return false;
+          return { reason: 'offscreen' };
         }
 
         // 8. Hit-test at center using element's own root (shadow or document).
@@ -256,12 +271,12 @@ COLLECT_JS = (
         const fromPoint = (root && typeof root.elementFromPoint === 'function')
           ? root.elementFromPoint(cx, cy)
           : el.ownerDocument.elementFromPoint(cx, cy);
-        if (!fromPoint) return false;
-        if (fromPoint === el) return true;
-        if (el.contains(fromPoint)) return true;
-        if (fromPoint.contains && fromPoint.contains(el)) return true;
-        if (fromPoint.shadowRoot && fromPoint.shadowRoot.contains(el)) return true;
-        return false;
+        if (!fromPoint) return { reason: 'occluded' };
+        if (fromPoint === el) return null;
+        if (el.contains(fromPoint)) return null;
+        if (fromPoint.contains && fromPoint.contains(el)) return null;
+        if (fromPoint.shadowRoot && fromPoint.shadowRoot.contains(el)) return null;
+        return { reason: 'occluded' };
       }
 
       // ---------- collection ----------
@@ -334,7 +349,9 @@ COLLECT_JS = (
           const role = getRole(el);
           if (roleFilter && role !== roleFilter) continue;
 
-          const reachable = isReachable(el);
+          const reachResult = isReachable(el);
+          const reachable = reachResult === null;
+          const unreachable_reason = reachable ? null : reachResult.reason;
           if (!includeUnreachable && !reachable) continue;
 
           const handle_id = 'h' + (results.length + 1);
@@ -361,6 +378,7 @@ COLLECT_JS = (
             row_context: rowContext(el),
             bbox: null,
             reachable,
+            unreachable_reason,
             in_shadow_dom: inShadow,
             in_iframe: inIframe,
           });

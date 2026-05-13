@@ -41,7 +41,26 @@ class Bounds:
 
 @dataclass(frozen=True)
 class Element:
-    """A single perceived element."""
+    """A single perceived element.
+
+    ``unreachable_reason`` is one of a small set of stable, snake_case slugs
+    when ``reachable=False``, and ``None`` when ``reachable=True``. The
+    vocabulary as of v0.1.4:
+
+    * ``not_in_document``    — el.isConnected was false
+    * ``display_none``       — CSS display: none
+    * ``visibility_hidden``  — CSS visibility: hidden | collapse
+    * ``opacity_zero``       — CSS opacity: 0
+    * ``css_hidden``         — other CSS visibility failure (content-visibility, etc.)
+    * ``zero_bounds``        — width or height is 0
+    * ``disabled``           — `disabled` attribute or aria-disabled="true"
+    * ``inert``              — inside an ``inert`` subtree
+    * ``aria_hidden``        — inside an ``aria-hidden="true"`` subtree
+    * ``pointer_events_none``— pointer-events:none on self or an ancestor
+    * ``clipped_by_ancestor``— ancestor `overflow:hidden|clip` clips the element
+    * ``offscreen``          — could not be scrolled into the viewport
+    * ``occluded``           — another element is on top at the hit-test points
+    """
 
     ref: str
     role: str
@@ -49,6 +68,7 @@ class Element:
     reachable: bool
     bounds: Optional[Bounds] = None
     value: Optional[str] = None
+    unreachable_reason: Optional[str] = None
     fingerprint: str = ""
     source: str = "a11y"          # "a11y" | "vision" — reserved for v0.3+
     confidence: float = 1.0        # 1.0 for a11y; <1.0 reserved for vision

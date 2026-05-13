@@ -9,6 +9,22 @@ from bench.manifest import PAGES_DIR
 from bench.server import PagesServer
 
 
+# (page_file, element_name, expected_reason) — drives the parametrized
+# unreachable_reason test below. Each entry exercises one specific filter path.
+_REASON_CASES = [
+    ("01_display_none.html",        "Hidden Button",         "display_none"),
+    ("02_visibility_hidden.html",   "Hidden Button",         "visibility_hidden"),
+    ("03_opacity_zero.html",        "Invisible Button",      "opacity_zero"),
+    ("04_pointer_events_none.html", "No Events Button",      "pointer_events_none"),
+    ("07_closed_drawer.html",       "Close Drawer",          "offscreen"),
+    ("08_modal_occlusion.html",     "Behind Button 1",       "occluded"),
+    ("10_inert_subtree.html",       "Inert Submit",          "inert"),
+    ("11_aria_hidden_cascade.html", "Hidden Action 1",       "aria_hidden"),
+    ("12_disabled_controls.html",   "Disabled Button",       "disabled"),
+    ("12_disabled_controls.html",   "ARIA-disabled Button",  "disabled"),
+]
+
+
 @pytest.fixture(scope="module")
 def server():
     with PagesServer(PAGES_DIR) as s:
@@ -198,6 +214,99 @@ def test_perceive_does_not_mutate_nested_scroll_containers():
         assert scroll_top == 0, (
             f"perceive() left a nested scroll container at scrollTop={scroll_top}; "
             "observation must restore nested scroll positions."
+        )
+
+
+@pytest.mark.parametrize("page_file,element_name,expected_reason", _REASON_CASES)
+def test_unreachable_reason_is_specific(server, page_file, element_name, expected_reason):
+    """Each unreachable element carries a specific reason slug naming why it was filtered."""
+    url = server.url_for(page_file)
+    with perceive.browser(url=url) as t:
+        state = t.perceive(include_unreachable=True)
+    el = state.find(name=element_name, reachable=False)
+    assert el is not None, f"could not find unreachable {element_name!r} on {page_file}"
+    assert el.unreachable_reason == expected_reason, (
+        f"on {page_file}, {element_name!r} reported reason "
+        f"{el.unreachable_reason!r}, expected {expected_reason!r}"
+    )
+
+
+def test_reachable_elements_have_no_unreachable_reason(server):
+    """Reachable elements must have unreachable_reason == None."""
+    url = server.url_for("08_modal_occlusion.html")
+    with perceive.browser(url=url) as t:
+        state = t.perceive(include_unreachable=True)
+    for el in state:
+        if el.reachable:
+            assert el.unreachable_reason is None, (
+                f"reachable element @{el.ref} {el.name!r} carried "
+                f"unreachable_reason={el.unreachable_reason!r}"
+            )
+
+
+def test_deleting_row_does_not_churn_other_rows_refs():
+    """Regression: deleting a table row must not slide other rows' Edit-button refs.
+
+    Symmetric to the row-insertion regression: row_context for each remaining
+    row is unchanged by the deletion of a different row, so each surviving
+    Edit button's fingerprint is unchanged and its ref is preserved.
+    """
+    with perceive.browser() as t:
+        t._page.set_content("""
+            <table>
+              <tr id="alice"><td>Alice</td><td><button>Edit</button></td></tr>
+              <tr id="bob"><td>Bob</td><td><button>Edit</button></td></tr>
+              <tr id="zara"><td>Zara</td><td><button>Edit</button></td></tr>
+            </table>
+        """)
+        s1 = t.perceive()
+        edits1 = s1.find_all(name="Edit")
+        assert len(edits1) == 3
+        original_refs = {e.ref for e in edits1}
+        assert len(original_refs) == 3, "the three Edit buttons should already have distinct refs"
+
+        # Delete the middle row.
+        t._page.evaluate("document.getElementById('bob').remove()")
+        s2 = t.perceive()
+        edits2 = s2.find_all(name="Edit")
+        assert len(edits2) == 2
+
+        new_refs = {e.ref for e in edits2}
+        preserved = original_refs & new_refs
+        assert len(preserved) == 2, (
+            f"deleting Bob's row should leave Alice's and Zara's Edit refs intact. "
+            f"originals={sorted(original_refs)}, current={sorted(new_refs)}, "
+            f"preserved={sorted(preserved)}"
+        )
+
+
+def test_label_change_reissues_ref_known_limitation():
+    """**Pins** the v0.1 known limitation: changing an element's accessible name
+    reissues the ref because the fingerprint is exact-match over identity
+    features (role + name + stable attrs + row context).
+
+    Scored-similarity matching is on the v0.2 roadmap; it will weight stable
+    attributes (id, data-testid) higher than the name so that
+    ``"Save" → "Saving..." → "Saved"`` preserves the ref. When that lands,
+    invert this assertion (and move the test to the scored-matching suite).
+    """
+    with perceive.browser() as t:
+        t._page.set_content('<button id="save-btn">Save</button>')
+        s1 = t.perceive()
+        before = s1.find(name="Save")
+        assert before is not None
+        original_ref = before.ref
+
+        # Simulate a "submitting" UI transition that changes the label.
+        t._page.evaluate("document.getElementById('save-btn').textContent = 'Saving...'")
+        s2 = t.perceive()
+        after = s2.find(name="Saving")
+        assert after is not None
+
+        assert after.ref != original_ref, (
+            "expected label change to reissue the ref under exact-fingerprint matching; "
+            "if this now fails, scored-similarity matching may have shipped — flip this "
+            "assertion or move this test into the scored-matching suite."
         )
 
 

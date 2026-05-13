@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-13
+
+### Added
+- **`Element.unreachable_reason`** — a stable, snake_case slug naming the specific reason an unreachable element was filtered, or `None` for reachable elements. Values: `not_in_document`, `display_none`, `visibility_hidden`, `opacity_zero`, `css_hidden`, `zero_bounds`, `disabled`, `inert`, `aria_hidden`, `pointer_events_none`, `clipped_by_ancestor`, `offscreen`, `occluded`. Non-breaking API addition. Pulled forward from v0.2 after three rounds of external feedback consistently identified it as the biggest debuggability gap.
+
+### Tests
+- `test_unreachable_reason_is_specific` — parametrized across 10 cases that exercise every reason slug against the existing conformance pages.
+- `test_reachable_elements_have_no_unreachable_reason` — pins the invariant that reachable elements carry `unreachable_reason == None`.
+- `test_deleting_row_does_not_churn_other_rows_refs` — adversarial regression symmetric to the v0.1.3 row-insertion test; deleting a middle row leaves the other rows' Edit-button refs intact.
+- `test_label_change_reissues_ref_known_limitation` — **pins** the documented v0.1 limitation that exact-fingerprint matching reissues the ref when an element's accessible name changes mid-session (e.g. "Save" → "Saving…"). Will be inverted when scored-similarity matching ships in v0.3.
+
 ## [0.1.3] — 2026-05-13
 
 ### Fixed
@@ -62,6 +73,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.2.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.0...v0.1.1

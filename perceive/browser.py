@@ -135,6 +135,7 @@ class BrowserTarget:
                 value=(r.get("value") or None),
                 reachable=bool(r["reachable"]),
                 bounds=Bounds(*r["bbox"]) if r.get("bbox") else None,
+                unreachable_reason=r.get("unreachable_reason"),
                 fingerprint=fingerprints[i],
             )
             for i, r in enumerate(raw["elements"])
