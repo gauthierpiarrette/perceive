@@ -14,6 +14,8 @@ Example::
 See SPEC.md for the full design rationale.
 """
 
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
 from perceive.browser import BrowserTarget
 from perceive.errors import (
     ElementNotFoundError,
@@ -23,7 +25,13 @@ from perceive.errors import (
 )
 from perceive.types import Bounds, DiffResult, Element, State
 
-__version__ = "0.1.0"
+# Single source of truth: read the installed package's metadata so this string
+# can never drift from pyproject.toml. Falls back to "0+local" when running
+# from a source checkout without an installed dist-info.
+try:
+    __version__ = _pkg_version("perceive")
+except PackageNotFoundError:
+    __version__ = "0+local"
 
 __all__ = [
     "__version__",

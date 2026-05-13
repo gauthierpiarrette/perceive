@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-05-13
+
+### Fixed
+- **`perceive.__version__` no longer drifts from the package version.** The string is now read from installed package metadata via `importlib.metadata` instead of being hardcoded. Removes the v0.1.1 wheel's incorrect self-report of "0.1.0".
+- **`perceive()` no longer mutates page scroll.** The reachability check's per-element `scrollIntoView` shifted the viewport; the final scroll position is now saved at the start of the collect run and restored at the end. Element bboxes are recomputed against the restored scroll so the values returned to the caller match the page state after `perceive()` returns.
+- **Bounding boxes for elements inside same-origin iframes are now in top-page viewport coordinates.** Previously the bbox returned for an iframe element was iframe-local, which caused `target.act("click", ref)` to click the wrong position on the top page. The iframe's own `getBoundingClientRect()` offset is now threaded through the recursive collector and added to each element's bbox.
+
+### Tests
+- Added `test_perceive_does_not_mutate_scroll` and `test_iframe_element_bbox_is_in_top_page_coords` (e2e).
+
 ## [0.1.1] — 2026-05-13
 
 ### Fixed
@@ -38,5 +48,6 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.1.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/gauthierpiarrette/perceive/releases/tag/v0.1.0

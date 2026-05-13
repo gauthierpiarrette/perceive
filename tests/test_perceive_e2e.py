@@ -63,6 +63,36 @@ def test_to_prompt_only_emits_reachable(server):
     assert "Behind" not in out
 
 
+def test_perceive_does_not_mutate_scroll(server):
+    """Reachability checks call scrollIntoView; perceive() must restore scroll."""
+    url = server.url_for("09_sticky_header_overlap.html")
+    with perceive.browser(url=url) as t:
+        # Start at scroll(0, 0); perceive() will scroll-into-view each candidate.
+        t._page.evaluate("window.scrollTo(0, 0)")
+        t.perceive()
+        x, y = t._page.evaluate("[window.scrollX, window.scrollY]")
+        assert (x, y) == (0, 0), f"perceive() left scroll at ({x},{y}), expected (0,0)"
+
+
+def test_iframe_element_bbox_is_in_top_page_coords(server):
+    """Bbox for elements inside same-origin iframes must include the iframe's offset."""
+    url = server.url_for("14_iframe.html")
+    with perceive.browser(url=url) as t:
+        state = t.perceive()
+    top = state.find(name="Top Frame Button")
+    iframe_btn = state.find(name="Iframe Save")
+    assert top is not None and iframe_btn is not None
+    assert top.bounds is not None and iframe_btn.bounds is not None
+    # The iframe sits below the top button in 14_iframe.html. With the iframe
+    # offset correctly applied, the iframe button's top-frame y-coordinate
+    # must be below the top button. Without the offset it would (wrongly)
+    # report y ≈ 16 (just the iframe-internal padding).
+    assert iframe_btn.bounds.y > top.bounds.y + 30, (
+        f"iframe button bbox.y={iframe_btn.bounds.y} should be well below "
+        f"top button bbox.y={top.bounds.y} — iframe offset likely not applied"
+    )
+
+
 def test_observe_change_captures_diff(server):
     """observe_change() exposes before/after/diff after the block runs."""
     url = server.url_for("13_shadow_dom.html")

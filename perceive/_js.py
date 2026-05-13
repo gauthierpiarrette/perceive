@@ -245,7 +245,13 @@ COLLECT_JS = (
       if (!window.__perceive) window.__perceive = { handles: new Map() };
       window.__perceive.handles.clear();
 
-      function within(el) {
+      // Save scroll so observation is non-mutating: the per-element
+      // scrollIntoView inside isReachable() shifts the page, and we restore
+      // at the end so callers see the page in the position they left it.
+      const savedScrollX = window.scrollX;
+      const savedScrollY = window.scrollY;
+
+      function within(el, frameOffset) {
         if (regionSelector) {
           const root = document.querySelector(regionSelector);
           if (!root) return false;
@@ -253,18 +259,24 @@ COLLECT_JS = (
         }
         if (regionBBox) {
           const r = el.getBoundingClientRect();
+          const ox = (frameOffset && frameOffset.x) || 0;
+          const oy = (frameOffset && frameOffset.y) || 0;
+          const left = r.left + ox, top = r.top + oy;
+          const right = r.right + ox, bottom = r.bottom + oy;
           const [rx, ry, rw, rh] = regionBBox;
-          if (r.right <= rx || r.left >= rx + rw || r.bottom <= ry || r.top >= ry + rh) {
+          if (right <= rx || left >= rx + rw || bottom <= ry || top >= ry + rh) {
             return false;
           }
         }
         return true;
       }
 
-      function collectFromRoot(root, results, inShadow, inIframe) {
+      function collectFromRoot(root, results, inShadow, inIframe, frameOffset) {
+        const ox = (frameOffset && frameOffset.x) || 0;
+        const oy = (frameOffset && frameOffset.y) || 0;
         const els = Array.from(root.querySelectorAll(SELECTOR));
         for (const el of els) {
-          if (!within(el)) continue;
+          if (!within(el, frameOffset)) continue;
           const role = getRole(el);
           if (roleFilter && role !== roleFilter) continue;
 
@@ -292,7 +304,12 @@ COLLECT_JS = (
             href,
             parent_landmark: parentLandmark(el),
             sibling_signature: siblingSignature(el),
-            bbox: [rect.x, rect.y, rect.width, rect.height],
+            // Bbox is in top-page viewport coordinates: for elements inside
+            // same-origin iframes, frameOffset is the iframe's position in
+            // the top frame. Captured at scrollIntoView-time; bboxes are
+            // recomputed below after scroll is restored so the values returned
+            // to the caller reflect the final viewport.
+            bbox: [rect.x + ox, rect.y + oy, rect.width, rect.height],
             reachable,
             in_shadow_dom: inShadow,
             in_iframe: inIframe,
@@ -302,26 +319,61 @@ COLLECT_JS = (
         const all = Array.from(root.querySelectorAll('*'));
         for (const host of all) {
           if (host.shadowRoot) {
-            collectFromRoot(host.shadowRoot, results, true, inIframe);
+            collectFromRoot(host.shadowRoot, results, true, inIframe, frameOffset);
           }
         }
       }
 
-      function collectFromDoc(doc, results, inIframe) {
-        collectFromRoot(doc, results, false, inIframe);
+      function collectFromDoc(doc, results, inIframe, frameOffset) {
+        collectFromRoot(doc, results, false, inIframe, frameOffset);
         const iframes = doc.querySelectorAll('iframe');
         for (const iframe of iframes) {
           try {
             const idoc = iframe.contentDocument;
-            if (idoc) collectFromDoc(idoc, results, true);
+            if (!idoc) continue;
+            const ir = iframe.getBoundingClientRect();
+            const childOffset = {
+              x: ((frameOffset && frameOffset.x) || 0) + ir.x,
+              y: ((frameOffset && frameOffset.y) || 0) + ir.y,
+            };
+            collectFromDoc(idoc, results, true, childOffset);
           } catch (e) {
             // cross-origin — skip
           }
         }
       }
 
+      // For each collected element, remember the offset it was captured under
+      // so we can recompute its bbox in the same coordinate frame after the
+      // scroll is restored.
+      const offsetsByHandle = new Map();
+      const origCollectFromRoot = collectFromRoot;
+      collectFromRoot = function (root, results, inShadow, inIframe, frameOffset) {
+        const startLen = results.length;
+        origCollectFromRoot(root, results, inShadow, inIframe, frameOffset);
+        for (let i = startLen; i < results.length; i++) {
+          offsetsByHandle.set(results[i].handle_id, frameOffset || { x: 0, y: 0 });
+        }
+      };
+
       const results = [];
-      collectFromDoc(document, results, false);
+      collectFromDoc(document, results, false, { x: 0, y: 0 });
+
+      // Restore scroll so observation does not mutate page state.
+      try { window.scrollTo(savedScrollX, savedScrollY); } catch (e) {}
+
+      // Recompute bboxes at the restored scroll position so the values
+      // returned are internally consistent and match the page state the
+      // caller will observe after perceive() returns.
+      for (const r of results) {
+        const el = window.__perceive.handles.get(r.handle_id);
+        if (el && el.isConnected) {
+          const off = offsetsByHandle.get(r.handle_id) || { x: 0, y: 0 };
+          const rect = el.getBoundingClientRect();
+          r.bbox = [rect.x + off.x, rect.y + off.y, rect.width, rect.height];
+        }
+      }
+
       return {
         elements: results,
         viewport: [0, 0, window.innerWidth, window.innerHeight],
