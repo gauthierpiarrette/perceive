@@ -28,7 +28,18 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Features:
-    """The raw features collected from one element. Used to compute fingerprints."""
+    """The raw features collected from one element. Used to compute fingerprints.
+
+    Notes on feature choices:
+      * ``sibling_signature`` was removed in v0.1.3 — it churned every sibling's
+        fingerprint whenever any sibling was added or removed, breaking ref
+        stability under benign DOM mutations.
+      * ``row_context`` replaces it for the specific problem
+        ``sibling_signature`` was meant to solve: distinguishing repeated
+        elements (e.g. "Edit" buttons in different table rows). It captures the
+        text content of the nearest row / list-item / option ancestor, which
+        is stable when *other* rows are inserted or removed.
+    """
 
     role: str
     name: str
@@ -38,7 +49,7 @@ class Features:
     name_attr: str         # form-element name attribute
     href: str              # links only
     parent_landmark: str   # role of nearest landmark ancestor ('', if none)
-    sibling_signature: str # joined roles of immediate siblings, sorted
+    row_context: str       # text of nearest row/listitem ancestor ('', if none)
 
     def fingerprint(self) -> str:
         """Stable hash from identity features only — no positional info."""
@@ -52,7 +63,7 @@ class Features:
             self.name_attr,
             self.href,
             self.parent_landmark,
-            self.sibling_signature,
+            self.row_context,
         ])
         return hashlib.sha1(parts.encode("utf-8")).hexdigest()[:12]
 

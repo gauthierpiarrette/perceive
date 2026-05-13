@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-05-13
+
+### Fixed
+- **Ref stability under sibling mutation.** Adding or removing a sibling element no longer churns the refs of unrelated elements. The fingerprint feature `sibling_signature` (joined sibling role names) has been removed — its only effect was breaking ref stability whenever any sibling was added, while contributing no actual disambiguation value.
+- **Ref stability under row insertion/reordering.** Inserting a new row above existing ones no longer slides every subsequent Edit-button ref to the wrong element. A new fingerprint feature `row_context` captures the text of the nearest row / list-item / option ancestor; it is stable when *other* rows are inserted or removed, so Alice's Edit keeps its ref when Zara is added above her.
+- **`act("click")` on iframe elements now lands on the right element.** `ELEMENT_BOUNDS_JS` now walks up frames (via `defaultView.frameElement`) to accumulate iframe offsets, computed fresh at action time. Previously the bbox returned by `_fresh_bounds` was iframe-local, and `page.mouse.click(cx, cy)` clicked the iframe's local coordinates on the top page — usually nothing or the wrong element.
+- **`perceive()` no longer mutates nested scroll containers.** v0.1.2 saved and restored the window's `scrollX/Y`, but the per-element `scrollIntoView` also scrolls any overflow:auto|scroll ancestor (and iframe documents). `COLLECT_JS` now snapshots every scroll position that could be touched — same-frame and same-origin nested frames — and restores them all before recomputing bboxes.
+
+### Tests
+- `test_adding_sibling_does_not_churn_existing_refs` — regression for the sibling-signature bug.
+- `test_inserting_row_does_not_churn_other_rows_refs` — regression for the within-batch occurrence-order bug; verifies `row_context` carries enough identity for repeated table rows.
+- `test_iframe_click_actually_lands_on_iframe_element` — clicks an iframe button whose `onclick` sets `parent.window.__iframe_clicked`; asserts the click actually fired.
+- `test_perceive_does_not_mutate_nested_scroll_containers` — perceive a deep button inside an overflow:auto div, assert the div's `scrollTop` is unchanged.
+
 ## [0.1.2] — 2026-05-13
 
 ### Fixed
@@ -48,6 +62,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.1.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/gauthierpiarrette/perceive/releases/tag/v0.1.0

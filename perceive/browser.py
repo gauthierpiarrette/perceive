@@ -275,7 +275,7 @@ def _features_from_raw(r: dict) -> Features:
         name_attr=r.get("name_attr") or "",
         href=r.get("href") or "",
         parent_landmark=r.get("parent_landmark") or "",
-        sibling_signature=r.get("sibling_signature") or "",
+        row_context=r.get("row_context") or "",
     )
 
 

@@ -137,18 +137,43 @@ COLLECT_JS = (
         return '';
       }
 
-      function siblingSignature(el) {
-        const parent = el.parentNode;
-        if (!parent || !parent.children) return '';
-        const sigs = [];
-        for (const sib of parent.children) {
-          if (sib === el) continue;
-          const role = (sib.getAttribute && sib.getAttribute('role'))
-            || (sib.tagName ? sib.tagName.toLowerCase() : '');
-          sigs.push(role);
+      // Text of the nearest row / list-item / option ancestor. Used to
+      // distinguish repeated identical elements (e.g. "Edit" buttons in
+      // different table rows). Stable when OTHER rows are inserted/removed —
+      // unlike the v0.1.2 sibling_signature, which churned every sibling's
+      // fingerprint whenever any sibling was added.
+      function rowContext(el) {
+        for (let a = el.parentElement; a; a = a.parentElement) {
+          const tag = a.tagName ? a.tagName.toLowerCase() : '';
+          const role = (a.getAttribute && a.getAttribute('role')) || '';
+          if (
+            tag === 'tr' || role === 'row' ||
+            tag === 'li' || role === 'listitem' ||
+            role === 'option' || role === 'treeitem' ||
+            role === 'gridcell' || role === 'rowheader'
+          ) {
+            return (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+          }
         }
-        sigs.sort();
-        return sigs.join(',');
+        return '';
+      }
+
+      // Walks up frames accumulating each containing iframe's position in its
+      // parent. Returns the offset to add to el.getBoundingClientRect() values
+      // to obtain top-page viewport coordinates. Computed fresh each call so
+      // the result reflects current scroll, not perceive-time scroll.
+      function getFrameOffset(el) {
+        let ox = 0, oy = 0;
+        let doc = el.ownerDocument;
+        while (doc && doc.defaultView && doc.defaultView !== window) {
+          const iframe = doc.defaultView.frameElement;
+          if (!iframe) break;
+          const r = iframe.getBoundingClientRect();
+          ox += r.x;
+          oy += r.y;
+          doc = iframe.ownerDocument;
+        }
+        return { x: ox, y: oy };
       }
 
       // ---------- reachability (SPEC §7.3) ----------
@@ -245,24 +270,55 @@ COLLECT_JS = (
       if (!window.__perceive) window.__perceive = { handles: new Map() };
       window.__perceive.handles.clear();
 
-      // Save scroll so observation is non-mutating: the per-element
-      // scrollIntoView inside isReachable() shifts the page, and we restore
-      // at the end so callers see the page in the position they left it.
+      // ---- Scroll save/restore (observation purity) ----
+      // The per-element scrollIntoView inside isReachable() may scroll the
+      // window, any overflow:auto|scroll ancestor, or an iframe's document.
+      // We snapshot every scroll position that might be touched, then restore
+      // them all at the end. Recompute bboxes after restore so the bbox
+      // values returned to the caller reflect the page-as-the-caller-left-it.
+      const scrollSaves = [];
+      function snapshotScrolls(doc) {
+        try {
+          if (doc.scrollingElement) {
+            scrollSaves.push({
+              el: doc.scrollingElement,
+              top: doc.scrollingElement.scrollTop,
+              left: doc.scrollingElement.scrollLeft,
+            });
+          }
+          const all = doc.querySelectorAll('*');
+          for (const el of all) {
+            if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
+              const cs = getComputedStyle(el);
+              const overflow = String(cs.overflow) + String(cs.overflowX) + String(cs.overflowY);
+              if (/auto|scroll/.test(overflow)) {
+                scrollSaves.push({ el, top: el.scrollTop, left: el.scrollLeft });
+              }
+            }
+          }
+          const iframes = doc.querySelectorAll('iframe');
+          for (const iframe of iframes) {
+            try {
+              if (iframe.contentDocument) snapshotScrolls(iframe.contentDocument);
+            } catch (e) { /* cross-origin — skip */ }
+          }
+        } catch (e) { /* defensive */ }
+      }
+      snapshotScrolls(document);
       const savedScrollX = window.scrollX;
       const savedScrollY = window.scrollY;
 
-      function within(el, frameOffset) {
+      function within(el) {
         if (regionSelector) {
           const root = document.querySelector(regionSelector);
           if (!root) return false;
           if (!root.contains(el) && root !== el) return false;
         }
         if (regionBBox) {
-          const r = el.getBoundingClientRect();
-          const ox = (frameOffset && frameOffset.x) || 0;
-          const oy = (frameOffset && frameOffset.y) || 0;
-          const left = r.left + ox, top = r.top + oy;
-          const right = r.right + ox, bottom = r.bottom + oy;
+          const rect = el.getBoundingClientRect();
+          const off = getFrameOffset(el);
+          const left = rect.left + off.x, top = rect.top + off.y;
+          const right = rect.right + off.x, bottom = rect.bottom + off.y;
           const [rx, ry, rw, rh] = regionBBox;
           if (right <= rx || left >= rx + rw || bottom <= ry || top >= ry + rh) {
             return false;
@@ -271,16 +327,13 @@ COLLECT_JS = (
         return true;
       }
 
-      function collectFromRoot(root, results, inShadow, inIframe, frameOffset) {
-        const ox = (frameOffset && frameOffset.x) || 0;
-        const oy = (frameOffset && frameOffset.y) || 0;
+      function collectFromRoot(root, results, inShadow, inIframe) {
         const els = Array.from(root.querySelectorAll(SELECTOR));
         for (const el of els) {
-          if (!within(el, frameOffset)) continue;
+          if (!within(el)) continue;
           const role = getRole(el);
           if (roleFilter && role !== roleFilter) continue;
 
-          const rect = el.getBoundingClientRect();
           const reachable = isReachable(el);
           if (!includeUnreachable && !reachable) continue;
 
@@ -292,6 +345,8 @@ COLLECT_JS = (
           const nameAttr = (el.getAttribute && el.getAttribute('name')) || '';
           const href = (el.getAttribute && el.getAttribute('href')) || '';
 
+          // Note: bbox is recomputed below after scroll restoration so the
+          // returned coordinates reflect post-restore viewport state.
           results.push({
             handle_id,
             role,
@@ -303,13 +358,8 @@ COLLECT_JS = (
             name_attr: nameAttr,
             href,
             parent_landmark: parentLandmark(el),
-            sibling_signature: siblingSignature(el),
-            // Bbox is in top-page viewport coordinates: for elements inside
-            // same-origin iframes, frameOffset is the iframe's position in
-            // the top frame. Captured at scrollIntoView-time; bboxes are
-            // recomputed below after scroll is restored so the values returned
-            // to the caller reflect the final viewport.
-            bbox: [rect.x + ox, rect.y + oy, rect.width, rect.height],
+            row_context: rowContext(el),
+            bbox: null,
             reachable,
             in_shadow_dom: inShadow,
             in_iframe: inIframe,
@@ -319,58 +369,50 @@ COLLECT_JS = (
         const all = Array.from(root.querySelectorAll('*'));
         for (const host of all) {
           if (host.shadowRoot) {
-            collectFromRoot(host.shadowRoot, results, true, inIframe, frameOffset);
+            collectFromRoot(host.shadowRoot, results, true, inIframe);
           }
         }
       }
 
-      function collectFromDoc(doc, results, inIframe, frameOffset) {
-        collectFromRoot(doc, results, false, inIframe, frameOffset);
+      function collectFromDoc(doc, results, inIframe) {
+        collectFromRoot(doc, results, false, inIframe);
         const iframes = doc.querySelectorAll('iframe');
         for (const iframe of iframes) {
           try {
             const idoc = iframe.contentDocument;
-            if (!idoc) continue;
-            const ir = iframe.getBoundingClientRect();
-            const childOffset = {
-              x: ((frameOffset && frameOffset.x) || 0) + ir.x,
-              y: ((frameOffset && frameOffset.y) || 0) + ir.y,
-            };
-            collectFromDoc(idoc, results, true, childOffset);
+            if (idoc) collectFromDoc(idoc, results, true);
           } catch (e) {
             // cross-origin — skip
           }
         }
       }
 
-      // For each collected element, remember the offset it was captured under
-      // so we can recompute its bbox in the same coordinate frame after the
-      // scroll is restored.
-      const offsetsByHandle = new Map();
-      const origCollectFromRoot = collectFromRoot;
-      collectFromRoot = function (root, results, inShadow, inIframe, frameOffset) {
-        const startLen = results.length;
-        origCollectFromRoot(root, results, inShadow, inIframe, frameOffset);
-        for (let i = startLen; i < results.length; i++) {
-          offsetsByHandle.set(results[i].handle_id, frameOffset || { x: 0, y: 0 });
-        }
-      };
-
       const results = [];
-      collectFromDoc(document, results, false, { x: 0, y: 0 });
+      collectFromDoc(document, results, false);
 
-      // Restore scroll so observation does not mutate page state.
+      // Restore scroll positions: nested containers first, then window.
+      // Order matters: setting an ancestor's scrollTop after a descendant's
+      // does not affect the descendant, but doing them in any order is fine
+      // here because each scrollable's state is independent.
+      for (const s of scrollSaves) {
+        try {
+          s.el.scrollTop = s.top;
+          s.el.scrollLeft = s.left;
+        } catch (e) { /* defensive */ }
+      }
       try { window.scrollTo(savedScrollX, savedScrollY); } catch (e) {}
 
-      // Recompute bboxes at the restored scroll position so the values
-      // returned are internally consistent and match the page state the
-      // caller will observe after perceive() returns.
+      // Recompute bboxes in top-page viewport coordinates AFTER restoring all
+      // scroll state, using a fresh getFrameOffset() walk for each element so
+      // the returned values reflect the page as the caller will observe it.
       for (const r of results) {
         const el = window.__perceive.handles.get(r.handle_id);
         if (el && el.isConnected) {
-          const off = offsetsByHandle.get(r.handle_id) || { x: 0, y: 0 };
           const rect = el.getBoundingClientRect();
+          const off = getFrameOffset(el);
           r.bbox = [rect.x + off.x, rect.y + off.y, rect.width, rect.height];
+        } else {
+          r.bbox = [0, 0, 0, 0];
         }
       }
 
@@ -393,8 +435,21 @@ ELEMENT_BOUNDS_JS = """
   const el = window.__perceive.handles.get(opts.handle_id);
   if (!el || !el.isConnected) return null;
   try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch (e) {}
+  // Walk up frames accumulating each containing iframe's position in its
+  // parent. Without this, clicks on iframe elements land on the iframe's
+  // local coordinates of the top page, not the element's real position.
+  let ox = 0, oy = 0;
+  let doc = el.ownerDocument;
+  while (doc && doc.defaultView && doc.defaultView !== window) {
+    const iframe = doc.defaultView.frameElement;
+    if (!iframe) break;
+    const ir = iframe.getBoundingClientRect();
+    ox += ir.x;
+    oy += ir.y;
+    doc = iframe.ownerDocument;
+  }
   const r = el.getBoundingClientRect();
-  return [r.x, r.y, r.width, r.height];
+  return [r.x + ox, r.y + oy, r.width, r.height];
 }
 """
 

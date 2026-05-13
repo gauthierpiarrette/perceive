@@ -25,7 +25,7 @@ def test_bounds_center():
 def _feat(**kw):
     base = dict(
         role="", name="", aria_label="", test_id="", id_attr="",
-        name_attr="", href="", parent_landmark="", sibling_signature="",
+        name_attr="", href="", parent_landmark="", row_context="",
     )
     base.update(kw)
     return Features(**base)
