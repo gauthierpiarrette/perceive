@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-05-14
+
+### Docs
+- README: sharper opening hook; added plain-text comparison block above the benchmark table; tightened footnotes and benchmark prose; hardened `git clone` URL; roadmap items reformatted for readability.
+
 ## [0.3.1] — 2026-05-13
 
 ### Added
@@ -117,6 +122,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.3.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
