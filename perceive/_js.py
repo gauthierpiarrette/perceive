@@ -222,12 +222,17 @@ COLLECT_JS = (
           }
         }
 
-        // 5. pointer-events: none on self or ancestor.
-        for (let a = el; a; a = nextAncestor(a)) {
-          if (a === document) break;
-          const acs = getComputedStyle(a);
-          if (acs && acs.pointerEvents === 'none') return { reason: 'pointer_events_none' };
-        }
+        // 5. pointer-events: none on the element itself.
+        //    Per CSS spec, pointer-events on an ancestor does NOT block a
+        //    descendant from being a hit-test target — the deepest non-none
+        //    element wins. Inheritance is already reflected in the element's
+        //    computed value, so a descendant with `pointer-events: inherit`
+        //    inside a `pointer-events: none` parent will report 'none' here
+        //    and be correctly rejected. Patterns like Ant Design's drawer,
+        //    where `.ant-drawer` has pointer-events:none and
+        //    `.ant-drawer-content-wrapper` has pointer-events:auto so the
+        //    drawer content can still receive clicks, depend on this.
+        if (cs.pointerEvents === 'none') return { reason: 'pointer_events_none' };
 
         // 6. Ancestor overflow-clip rejection: element outside its clipping rect.
         //    position:fixed elements are rendered relative to the viewport and
