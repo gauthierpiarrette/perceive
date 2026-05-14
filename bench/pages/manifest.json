@@ -14,6 +14,11 @@
     { "id": "11_aria_hidden_cascade",   "file": "11_aria_hidden_cascade.html",   "category": "ancestor_attribute" },
     { "id": "12_disabled_controls",     "file": "12_disabled_controls.html",     "category": "non_interactive" },
     { "id": "13_shadow_dom",            "file": "13_shadow_dom.html",            "category": "traversal" },
-    { "id": "14_iframe",                "file": "14_iframe.html",                "category": "traversal" }
+    { "id": "14_iframe",                "file": "14_iframe.html",                "category": "traversal" },
+    { "id": "15_radix_dialog",          "file": "15_radix_dialog.html",          "category": "component_library" },
+    { "id": "16_mui_modal",             "file": "16_mui_modal.html",             "category": "component_library" },
+    { "id": "17_antd_drawer_open",      "file": "17_antd_drawer_open.html",      "category": "component_library" },
+    { "id": "18_headlessui_combobox",   "file": "18_headlessui_combobox.html",   "category": "component_library" },
+    { "id": "19_long_list_repeated_actions", "file": "19_long_list_repeated_actions.html", "category": "component_library" }
   ]
 }

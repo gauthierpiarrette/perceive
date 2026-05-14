@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: Radix Dialog (open)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .page { padding: 2rem; max-width: 720px; }
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 50;
+    }
+    .dialog {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1.5rem;
+      border-radius: 6px;
+      z-index: 51;
+      min-width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <h1 style="padding: 2rem 2rem 0">15 &mdash; Radix Dialog (open)</h1>
+  <p style="padding: 0 2rem">Models the DOM <a href="https://www.radix-ui.com/primitives/docs/components/dialog">Radix Dialog</a>
+     emits when open: the dialog is portal-mounted at body level, and the main page region
+     receives <code>aria-hidden="true"</code> to remove it from the accessibility tree.</p>
+
+  <!-- Background content — Radix marks this aria-hidden while the Dialog is open. -->
+  <main class="page" aria-hidden="true">
+    <h2>Dashboard</h2>
+    <button data-bench-id="bg-settings">Settings</button>
+    <button data-bench-id="bg-profile">Profile</button>
+  </main>
+
+  <!-- Radix portal -->
+  <div data-radix-portal>
+    <div class="overlay" data-state="open"></div>
+    <div class="dialog" role="dialog" aria-modal="true" data-state="open">
+      <h2>Confirm action</h2>
+      <button data-bench-id="dialog-confirm">Confirm</button>
+      <button data-bench-id="dialog-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "15_radix_dialog",
+    "category": "component_library",
+    "description": "Radix Dialog open state: background main is aria-hidden; dialog buttons are reachable.",
+    "elements": [
+      { "bench_id": "bg-settings",     "role": "button", "name": "Settings", "reachable": false, "reason": "ancestor main has aria-hidden=true (Radix pattern)" },
+      { "bench_id": "bg-profile",      "role": "button", "name": "Profile",  "reachable": false, "reason": "ancestor main has aria-hidden=true (Radix pattern)" },
+      { "bench_id": "dialog-confirm",  "role": "button", "name": "Confirm",  "reachable": true },
+      { "bench_id": "dialog-cancel",   "role": "button", "name": "Cancel",   "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>

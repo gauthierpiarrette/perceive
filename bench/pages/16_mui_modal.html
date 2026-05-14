@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: MUI Modal (open)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .page { padding: 2rem; max-width: 720px; }
+    .MuiBackdrop-root {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1300;
+    }
+    .MuiModal-root { position: absolute; }
+    .MuiDialog-paper {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      z-index: 1301;
+      min-width: 320px;
+      box-shadow: 0 24px 38px rgba(0,0,0,0.14);
+    }
+  </style>
+</head>
+<body>
+  <h1 style="padding: 2rem 2rem 0">16 &mdash; MUI Modal (open)</h1>
+  <p style="padding: 0 2rem">Models the DOM <a href="https://mui.com/material-ui/react-modal/">MUI Modal</a>
+     emits when open: a portal-mounted backdrop covers the page; the dialog floats above it.
+     The page buttons remain in the DOM but are occluded.</p>
+
+  <div id="root">
+    <div class="page">
+      <h2>File Browser</h2>
+      <button data-bench-id="page-edit">Edit</button>
+      <button data-bench-id="page-share">Share</button>
+    </div>
+  </div>
+
+  <!-- Portal-mounted modal -->
+  <div class="MuiModal-root" role="presentation">
+    <div class="MuiBackdrop-root" aria-hidden="true"></div>
+    <div class="MuiDialog-paper" role="dialog" aria-modal="true">
+      <h2>Delete this file?</h2>
+      <button data-bench-id="mui-delete">Delete</button>
+      <button data-bench-id="mui-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "16_mui_modal",
+    "category": "component_library",
+    "description": "MUI Modal open state: backdrop occludes page content; modal buttons reachable.",
+    "elements": [
+      { "bench_id": "page-edit",  "role": "button", "name": "Edit",   "reachable": false, "reason": "occluded by MUI backdrop" },
+      { "bench_id": "page-share", "role": "button", "name": "Share",  "reachable": false, "reason": "occluded by MUI backdrop" },
+      { "bench_id": "mui-delete", "role": "button", "name": "Delete", "reachable": true },
+      { "bench_id": "mui-cancel", "role": "button", "name": "Cancel", "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>

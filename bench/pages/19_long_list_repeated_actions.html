@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: long scrollable list with repeated actions</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 600px; }
+    .list {
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+    .row:last-child { border-bottom: none; }
+    button { padding: 0.25rem 0.75rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>19 &mdash; Long scrollable list with repeated actions</h1>
+  <p>Tests three things simultaneously: <em>(1)</em> all <code>Edit</code> buttons are reachable
+     via <code>scrollIntoView</code> even when only 3-4 rows are visible at a time, <em>(2)</em>
+     each Edit button receives a <strong>distinct</strong> ref via <code>row_context</code>
+     fingerprinting on the surrounding row text, and <em>(3)</em> the container's scroll position
+     is restored after <code>perceive()</code> completes.</p>
+
+  <div class="list" id="users">
+    <div class="row" role="listitem">
+      <span>Alice Adams</span>
+      <button data-bench-id="alice-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Bob Brown</span>
+      <button data-bench-id="bob-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Carla Chen</span>
+      <button data-bench-id="carla-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Diego Diaz</span>
+      <button data-bench-id="diego-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Esther Evans</span>
+      <button data-bench-id="esther-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Farah Farouk</span>
+      <button data-bench-id="farah-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Gabriel Garcia</span>
+      <button data-bench-id="gabriel-edit">Edit</button>
+    </div>
+    <div class="row" role="listitem">
+      <span>Hina Hassan</span>
+      <button data-bench-id="hina-edit">Edit</button>
+    </div>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "19_long_list_repeated_actions",
+    "category": "component_library",
+    "description": "Eight rows of (name, Edit button) inside an overflow-y:auto container. All Edit buttons are reachable; row_context disambiguates each one via the row's text content.",
+    "elements": [
+      { "bench_id": "alice-edit",   "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "bob-edit",     "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "carla-edit",   "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "diego-edit",   "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "esther-edit",  "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "farah-edit",   "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "gabriel-edit", "role": "button", "name": "Edit", "reachable": true },
+      { "bench_id": "hina-edit",    "role": "button", "name": "Edit", "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>

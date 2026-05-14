@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: Headless UI Combobox (closed)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 480px; }
+    input { padding: 0.5rem; width: 100%; box-sizing: border-box; font-size: 1rem; }
+    ul { list-style: none; padding: 0; margin: 0.25rem 0; border: 1px solid #ccc; border-radius: 4px; }
+    li { padding: 0; }
+    button { padding: 0.5rem 1rem; width: 100%; text-align: left; background: white; border: none; cursor: pointer; }
+    button:hover { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>18 &mdash; Headless UI Combobox (closed)</h1>
+  <p>Models the DOM <a href="https://headlessui.com/v1/react/combobox">Headless UI's Combobox</a> emits
+     when collapsed: the listbox parent carries the <code>hidden</code> attribute, so its option
+     children are not visible. The combobox input remains reachable.</p>
+
+  <label>
+    Fruit:
+    <input
+      data-bench-id="combobox-input"
+      role="combobox"
+      aria-expanded="false"
+      aria-controls="fruit-list"
+      placeholder="Type to search…"
+    />
+  </label>
+
+  <ul id="fruit-list" role="listbox" hidden>
+    <li role="option">
+      <button data-bench-id="opt-apple">Apple</button>
+    </li>
+    <li role="option">
+      <button data-bench-id="opt-banana">Banana</button>
+    </li>
+    <li role="option">
+      <button data-bench-id="opt-cherry">Cherry</button>
+    </li>
+  </ul>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "18_headlessui_combobox",
+    "category": "component_library",
+    "description": "Headless UI Combobox closed state: listbox parent has hidden attribute, so option buttons are unreachable; the combobox input is reachable.",
+    "elements": [
+      { "bench_id": "combobox-input", "role": "combobox", "name": "Fruit:",  "reachable": true },
+      { "bench_id": "opt-apple",      "role": "button",   "name": "Apple",   "reachable": false, "reason": "ancestor ul has the hidden attribute (display:none)" },
+      { "bench_id": "opt-banana",     "role": "button",   "name": "Banana",  "reachable": false, "reason": "ancestor ul has the hidden attribute (display:none)" },
+      { "bench_id": "opt-cherry",     "role": "button",   "name": "Cherry",  "reachable": false, "reason": "ancestor ul has the hidden attribute (display:none)" }
+    ]
+  }
+  </script>
+</body>
+</html>

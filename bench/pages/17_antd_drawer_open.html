@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reachability conformance: Ant Design Drawer (open)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; font-size: 1rem; }
+    .page { padding: 2rem; max-width: 720px; }
+    .ant-drawer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .ant-drawer-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      pointer-events: auto;
+    }
+    .ant-drawer-content-wrapper {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 378px;
+      pointer-events: auto;
+    }
+    .ant-drawer-content {
+      height: 100%;
+      background: white;
+      padding: 1.5rem;
+      box-sizing: border-box;
+      box-shadow: -6px 0 16px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body>
+  <h1 style="padding: 2rem 2rem 0">17 &mdash; Ant Design Drawer (open)</h1>
+  <p style="padding: 0 2rem">Models the DOM <a href="https://ant.design/components/drawer">Ant Design's Drawer</a>
+     emits when open. The Ant Design Drawer is the canonical component referenced in
+     <a href="https://github.com/microsoft/playwright/issues/39955">Playwright issue #39955</a>;
+     page buttons behind the drawer mask are occluded.</p>
+
+  <div class="page">
+    <h2>Products</h2>
+    <button data-bench-id="page-1">Page Button 1</button>
+    <button data-bench-id="page-2">Page Button 2</button>
+  </div>
+
+  <div class="ant-drawer ant-drawer-right ant-drawer-open">
+    <div class="ant-drawer-mask"></div>
+    <div class="ant-drawer-content-wrapper">
+      <div class="ant-drawer-content">
+        <h2>Filters</h2>
+        <button data-bench-id="drawer-apply">Apply</button>
+        <button data-bench-id="drawer-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" id="ground-truth">
+  {
+    "page_id": "17_antd_drawer_open",
+    "category": "component_library",
+    "description": "Ant Design Drawer open state: page buttons occluded by drawer mask; drawer-content buttons reachable.",
+    "elements": [
+      { "bench_id": "page-1",        "role": "button", "name": "Page Button 1", "reachable": false, "reason": "occluded by Ant Design drawer mask" },
+      { "bench_id": "page-2",        "role": "button", "name": "Page Button 2", "reachable": false, "reason": "occluded by Ant Design drawer mask" },
+      { "bench_id": "drawer-apply",  "role": "button", "name": "Apply",          "reachable": true },
+      { "bench_id": "drawer-reset",  "role": "button", "name": "Reset",          "reachable": true }
+    ]
+  }
+  </script>
+</body>
+</html>
