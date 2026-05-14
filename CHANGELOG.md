@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-05-13
+
+### Added
+- **5 real component-library bench pages** in `bench/pages/`: Radix Dialog (`15`), MUI Modal (`16`), Ant Design Drawer open state (`17`, the canonical component referenced in Playwright #39955), Headless UI Combobox closed state (`18`), and a long scrollable list with repeated `Edit` buttons (`19`). The corpus is now 19 pages / 60 ground-truth labels (was 14 / 36).
+
+### Fixed
+- **Reachability check no longer rejects elements whose ancestor has `pointer-events: none`.** Per CSS spec a descendant with `pointer-events: auto` (or default) is a valid hit-test target even when an ancestor has `pointer-events: none`. The previous implementation walked the ancestor chain and rejected on any `pointer-events: none`, which broke patterns like Ant Design's drawer where `.ant-drawer` has `pointer-events: none` so background clicks pass through and `.ant-drawer-content-wrapper` has `pointer-events: auto` so its children can still receive clicks. Now we check only the element's own computed `pointer-events`; inheritance is reflected in `getComputedStyle` so `inherit`-from-`none` is still correctly rejected. Verified by page `17_antd_drawer_open` and regression-protected by the existing `04_pointer_events_none` page.
+
+### Benchmark — updated head-to-head
+
+Numbers on the new 19-page corpus (60 ground-truth labels, 34 reachable / 26 unreachable):
+
+| Adapter | Precision | F1 | Unreachable wrongly surfaced | Median `to_prompt()` tokens / page | Median cold-call latency |
+|---|---:|---:|---:|---:|---:|
+| Raw a11y baseline | 0.567 | 0.723 | 26 / 26 | 26 | 1844 ms |
+| Playwright MCP (`@playwright/mcp`) | 0.654 | 0.791 | 18 / 26 | 195 | 3548 ms |
+| `perceive` | 1.000 | 1.000 | 0 / 26 | 14 | 1657 ms |
+
+Six of the additional Playwright MCP false positives (12 → 18) come from the new component-library pages — confirming the failure pattern documented in Playwright #39955 reproduces on real Radix, MUI, and Ant Design DOM, not only synthetic test pages.
+
+### Docs
+- README: section heading `## Limitations (v0.1)` → `## Limitations`; updated stale version-pinned roadmap items; benchmark table now includes `Median cold-call latency`, drops `Recall` (1.000 across all adapters), uses `Unreachable wrongly surfaced` for clarity; added a token-counting methodology footnote; added a side-by-side terminal-output block under the table; example uses `el.unreachable_reason` to show the v0.2.0 debug capability.
+
 ## [0.3.0] — 2026-05-13
 
 ### Added
@@ -94,6 +117,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.3.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.1.3...v0.2.0

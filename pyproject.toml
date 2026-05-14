@@ -1,6 +1,6 @@
 [project]
 name = "perceive"
-version = "0.3.0"
+version = "0.3.1"
 description = "Compact, ref-stable, reachability-filtered perception for AI browser agents"
 readme = "README.md"
 requires-python = ">=3.10"
