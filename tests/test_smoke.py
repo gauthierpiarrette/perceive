@@ -22,7 +22,9 @@ from bench.types import AdapterResult, GroundTruthElement, PerceivedElement
 def test_manifest_loads():
     manifest = load_manifest()
     assert manifest["version"] == "0.1.0"
-    assert len(manifest["pages"]) == 14
+    # Page count is an aspect-of-the-day count; this assertion exists to catch
+    # accidental dropouts during refactors, not to pin a target.
+    assert len(manifest["pages"]) >= 14
 
 
 def test_all_pages_exist():
