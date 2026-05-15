@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-05-15
+
+### Added
+- **Chrome DevTools MCP bench adapter** (`bench/adapters/chrome_devtools_mcp.py`) — drives Google's `chrome-devtools-mcp` server via stdio JSON-RPC (`navigate_page` then `take_snapshot`). Parses the `uid=<N_M> <role> "<name>"` snapshot format, verified by probing the live server rather than guessing. Requires Node.js + `npx` and a local Chrome to drive.
+- **Vercel agent-browser bench adapter** (`bench/adapters/agent_browser.py`) — drives the `agent-browser` CLI (`open` → `snapshot -i --json` → `close`). Resolves the installed binary, falls back to `npx`; per-command timeout tunable via `PERCEIVE_AGENT_BROWSER_TIMEOUT`. Retries the transient daemon-connect race that can occur when one page's `close` outraces the next page's `open`.
+- **Shared MCP stdio client** (`bench/adapters/_mcp_stdio.py`) — extracted the JSON-RPC-over-stdio transport (spawn, initialize handshake, blocking request/response, teardown) previously inlined in the Playwright MCP adapter. Both MCP adapters now share it; `playwright_mcp.py` was refactored onto it with no behavior change (false-positive and token numbers unchanged).
+
+### Fixed
+- **`BrowserTarget` no longer leaks the browser process or poisons the thread when construction fails.** If `goto()` raised inside `__init__` — routine on real sites (connection resets, timeouts, sites blocking headless) — the half-constructed target left the Playwright driver started and the Chromium process open, and the thread's asyncio loop stayed alive, so every later `perceive.browser()` call in that process failed with "Sync API inside the asyncio loop". `__init__` now tears the target down on partial-construction failure and re-raises. Found via a real-site sanity check; regression-protected by `test_browser_init_failure_cleans_up`.
+- **Accessible names are normalized to flat strings.** Layout whitespace from HTML indentation (newlines, tabs) leaked into `Element.name` — a Wikipedia table-of-contents link came back as `"1\n\t\t\t\tFunction"`, breaking the one-line-per-element shape of `State.to_prompt()`. Names are now whitespace-collapsed (per the ARIA accessible-name "flat string" spec) before the name reaches either the ref fingerprint or the `Element`. Regression-protected by `test_accessible_name_whitespace_is_normalized`.
+
+### Benchmark — five-tool head-to-head
+
+Numbers on the 19-page corpus (60 ground-truth labels, 34 reachable / 26 unreachable):
+
+| Adapter | Precision | F1 | Unreachable wrongly surfaced | Median observation tokens / page | Median cold-call latency |
+|---|---:|---:|---:|---:|---:|
+| Raw a11y baseline | 0.567 | 0.723 | 26 / 26 | 26 | 1363 ms |
+| Playwright MCP (`@playwright/mcp`) | 0.654 | 0.791 | 18 / 26 | 195 | 3938 ms |
+| Chrome DevTools MCP (`chrome-devtools-mcp`) | 0.694 | 0.819 | 15 / 26 | 153 | 6937 ms |
+| Vercel agent-browser (`agent-browser`) | 0.694 | 0.819 | 15 / 26 | 52 | 2287 ms |
+| `perceive` | 1.000 | 1.000 | 0 / 26 | 14 | 1605 ms |
+
+Chrome DevTools MCP and agent-browser both read Chrome's native accessibility tree and post identical false-positive profiles; Playwright MCP additionally keeps `inert` and `aria-hidden` subtrees the other two drop. agent-browser is the most token-frugal of the three and still surfaces 15 of 26 unreachable elements — the gap is reachability, not snapshot size.
+
+### Docs
+- README: benchmark expanded to a five-tool table (added Chrome DevTools MCP and Vercel agent-browser rows); headline and prose reframed around the observation-layer problem across browser-agent tools rather than a single competitor; dropped the "same Chromium build" claim since each tool now drives the browser it ships with; reproduction commands, roadmap, and limitations updated.
+
 ## [0.3.2] — 2026-05-14
 
 ### Docs
@@ -122,6 +150,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.3.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.2.1...v0.3.0
