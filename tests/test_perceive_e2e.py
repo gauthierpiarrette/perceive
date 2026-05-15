@@ -310,6 +310,44 @@ def test_label_change_reissues_ref_known_limitation():
         )
 
 
+def test_browser_init_failure_cleans_up():
+    """Regression: a navigation failure during construction must not leak the
+    Playwright driver or poison the thread.
+
+    Before the fix, a ``goto()`` failure inside ``__init__`` left the Playwright
+    instance started (so the thread's asyncio loop stayed alive) and the browser
+    process open; the next ``perceive.browser()`` then failed with "Sync API
+    inside the asyncio loop". Here a refused connection forces the failure, and
+    a second, valid construction must still succeed.
+    """
+    with pytest.raises(Exception):
+        # Nothing listens on port 9 — goto() raises during __init__.
+        perceive.browser(url="http://127.0.0.1:9/")
+
+    # The thread must not be poisoned: a fresh browser still constructs and works.
+    with perceive.browser() as t:
+        t._page.set_content("<button>OK</button>")
+        state = t.perceive()
+        assert state.find(name="OK") is not None
+
+
+def test_accessible_name_whitespace_is_normalized():
+    """Regression: accessible names are flat strings — layout whitespace
+    (newlines, tabs from HTML indentation) collapsed to single spaces.
+
+    Found via the real-site sanity check: Wikipedia TOC links came back as
+    ``"1\\n\\t\\t\\t\\tFunction"``, which breaks the one-line-per-element shape
+    of ``State.to_prompt()``.
+    """
+    with perceive.browser() as t:
+        t._page.set_content("<button>\n   Save\n   Changes\n</button>")
+        state = t.perceive()
+        btn = state.find(role="button")
+        assert btn is not None
+        assert "\n" not in btn.name and "\t" not in btn.name
+        assert btn.name == "Save Changes"
+
+
 def test_observe_change_captures_diff(server):
     """observe_change() exposes before/after/diff after the block runs."""
     url = server.url_for("13_shadow_dom.html")

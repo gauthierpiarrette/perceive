@@ -48,19 +48,30 @@ class BrowserTarget:
     ) -> None:
         from playwright.sync_api import sync_playwright  # lazy import
 
-        self._pw = sync_playwright().start()
-        self._browser = self._pw.chromium.launch(headless=headless)
-        self._page = self._browser.new_page(
-            viewport={"width": viewport[0], "height": viewport[1]}
-        )
         self._refs = RefAllocator()
         # Handle ids are short-lived: a fresh map is built every perceive() call,
         # so an action targeting a stale ref fails cleanly.
         self._handles: dict[str, str] = {}  # ref → handle_id
         self._closed = False
+        self._browser = None
+        self._page = None
 
-        if url:
-            self.goto(url)
+        self._pw = sync_playwright().start()
+        try:
+            self._browser = self._pw.chromium.launch(headless=headless)
+            self._page = self._browser.new_page(
+                viewport={"width": viewport[0], "height": viewport[1]}
+            )
+            if url:
+                self.goto(url)
+        except Exception:
+            # If construction fails partway — most often a navigation error
+            # from goto() against a flaky or unreachable site — tear it all
+            # down. Otherwise the Playwright driver and browser process leak,
+            # and the thread's asyncio loop stays alive so the next
+            # sync_playwright() call raises "Sync API inside the asyncio loop".
+            self.close()
+            raise
 
     # ----- lifecycle -----
 
@@ -122,6 +133,14 @@ class BrowserTarget:
             "includeUnreachable": include_unreachable,
         }
         raw = self._page.evaluate(COLLECT_JS, opts)
+
+        # An accessible name is a flat string (ARIA accname spec), but the DOM
+        # text it is built from carries layout whitespace — newlines and tabs
+        # from HTML indentation. Collapse it before the name reaches either the
+        # ref fingerprint or the Element, so each element stays one line in
+        # State.to_prompt().
+        for r in raw["elements"]:
+            r["name"] = _normalize_name(r.get("name"))
 
         features_batch = [_features_from_raw(r) for r in raw["elements"]]
         refs, fingerprints = self._refs.assign(features_batch)
@@ -265,6 +284,17 @@ class BrowserTarget:
 
 
 # ----- module helpers -----
+
+
+def _normalize_name(name: Optional[str]) -> str:
+    """Collapse whitespace runs in an accessible name to single spaces.
+
+    Raw DOM text carries layout whitespace (newlines, tabs from HTML
+    indentation); per the ARIA accname spec a name is a flat string. Leaving
+    newlines in also breaks the one-line-per-element shape of
+    ``State.to_prompt()``.
+    """
+    return " ".join((name or "").split())
 
 
 def _features_from_raw(r: dict) -> Features:
