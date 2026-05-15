@@ -17,38 +17,47 @@ with perceive.browser(url="https://example.com") as t:
 
 ## Benchmark results
 
-Measured on a 19-page hand-labeled reachability conformance suite (`bench/`): 14 synthetic patterns plus 5 real-world component-library cases (Radix Dialog, MUI Modal, Ant Design Drawer, Headless UI Combobox, scrollable list with repeated actions). Same machine, same Chromium build, same 60 ground-truth labels (34 reachable, 26 unreachable):
+Measured on a 19-page hand-labeled reachability conformance suite (`bench/`): 14 synthetic patterns plus 5 real-world component-library cases (Radix Dialog, MUI Modal, Ant Design Drawer, Headless UI Combobox, scrollable list with repeated actions). Same machine, same conformance pages, same 60 ground-truth labels (34 reachable, 26 unreachable); each tool drives the browser it ships with:
 
-**Playwright MCP surfaces 18 elements an AI agent cannot actually interact with; `perceive` surfaces 0.**
+**Three browser-agent observation tools each surface 15 to 18 of 26 unreachable elements as valid agent actions; `perceive` surfaces 0.**
 
 ```text
-playwright_mcp     18 / 26 unreachable surfaced     195 tokens     3548 ms cold-call
-perceive            0 / 26 unreachable surfaced      14 tokens     1657 ms cold-call
+raw a11y baseline     26 / 26 unreachable surfaced      26 tokens     1363 ms cold-call
+playwright_mcp        18 / 26 unreachable surfaced     195 tokens     3938 ms cold-call
+chrome_devtools_mcp   15 / 26 unreachable surfaced     153 tokens     6937 ms cold-call
+agent_browser         15 / 26 unreachable surfaced      52 tokens     2287 ms cold-call
+perceive               0 / 26 unreachable surfaced      14 tokens     1605 ms cold-call
 ```
 
 | Adapter | Precision | F1 | False-positive actions | Median observation tokens / page | Median cold-call latency |
 |---|---:|---:|---:|---:|---:|
-| Raw a11y baseline (no reachability filtering) | 0.567 | 0.723 | 26 / 26 | 26 | 1844 ms |
-| Playwright MCP (`@playwright/mcp`) | 0.654 | 0.791 | 18 / 26 | 195 | 3548 ms |
-| **`perceive`** | **1.000** | **1.000** | **0 / 26** | **14** | **1657 ms** |
+| Raw a11y baseline (no reachability filtering) | 0.567 | 0.723 | 26 / 26 | 26 | 1363 ms |
+| Playwright MCP (`@playwright/mcp`) | 0.654 | 0.791 | 18 / 26 | 195 | 3938 ms |
+| Chrome DevTools MCP (`chrome-devtools-mcp`) | 0.694 | 0.819 | 15 / 26 | 153 | 6937 ms |
+| Vercel agent-browser (`agent-browser`) | 0.694 | 0.819 | 15 / 26 | 52 | 2287 ms |
+| **`perceive`** | **1.000** | **1.000** | **0 / 26** | **14** | **1605 ms** |
 
-*Recall is 1.000 for all three adapters; the gap is precision, not coverage.*
+*Recall is 1.000 for all five adapters; the gap is precision, not coverage.*
 
 ```text
 $ perceive-bench run --adapter playwright_mcp --suite reachability
-  precision : 0.654    FP: 18 / 26    median tokens: 195    median cold-call latency: 3548 ms
+  precision : 0.654    FP: 18 / 26    median tokens: 195    median cold-call latency: 3938 ms
+
+$ perceive-bench run --adapter chrome_devtools_mcp --suite reachability
+  precision : 0.694    FP: 15 / 26    median tokens: 153    median cold-call latency: 6937 ms
+
+$ perceive-bench run --adapter agent_browser --suite reachability
+  precision : 0.694    FP: 15 / 26    median tokens:  52    median cold-call latency: 2287 ms
 
 $ perceive-bench run --adapter perceive --suite reachability
-  precision : 1.000    FP:  0 / 26    median tokens:  14    median cold-call latency: 1657 ms
+  precision : 1.000    FP:  0 / 26    median tokens:  14    median cold-call latency: 1605 ms
 ```
 
-*Tokens are the agent-facing snapshot only (`state.to_prompt()` for perceive, `browser_snapshot` for Playwright MCP); prompt context is excluded. Latency is per-call wall time including a fresh browser launch; a long-lived MCP server would close most of that gap. The false-positive and token numbers are unaffected.*
+*Tokens are the agent-facing snapshot only (`state.to_prompt()` for perceive, `browser_snapshot` for Playwright MCP, `take_snapshot` for Chrome DevTools MCP, `snapshot -i` for agent-browser); prompt context is excluded. Latency is per-call wall time including a fresh browser launch; a long-lived server or daemon would close most of that gap. The false-positive and token numbers are unaffected.*
 
-The 18 false positives are patterns Chromium's a11y tree alone can't resolve: modal occlusion, sticky-header overlap, off-screen transforms, `inert` subtrees, `aria-hidden` cascades, including the Radix Dialog, MUI Modal, and Ant Design Drawer. `perceive` runs an explicit reachability pass over them. Determinism across 19 pages × 5 runs: 1.000 exact match.
+All three tools miss the same core geometry the accessibility tree doesn't encode, on synthetic pages and real component libraries alike (Radix Dialog, MUI Modal, Ant Design Drawer): modal occlusion, sticky-header overlap, off-screen transforms, parent-overflow clipping. Chrome DevTools MCP and agent-browser read Chrome's native accessibility tree and land on identical false-positive profiles; Playwright MCP additionally keeps `inert` and `aria-hidden` subtrees the other two drop. agent-browser is by far the most token-frugal of the three and still surfaces 15 of 26: the gap is reachability, not snapshot size. `perceive` runs an explicit reachability pass and resolves all of them. Determinism across 19 pages × 5 runs: 1.000 exact match.
 
 **Scope of claim.** This is a reachability conformance benchmark, not a general claim about Playwright. Playwright remains the execution layer `perceive`'s browser backend builds on; this measures the *observation* layer.
-
-Bench adapters for Chrome DevTools MCP and Vercel agent-browser are still on the roadmap.
 
 ## Install
 
@@ -201,7 +210,7 @@ This is a deliberately narrow early release. Things `perceive` does **not** do y
 - **Closed Shadow DOM cannot be traversed** (`{ mode: 'closed' }` is opaque by design). Open shadow roots work.
 - **Ref stability is exact-fingerprint based.** A button whose accessible name changes mid-session ("Save" → "Saving…") will get a new ref. Scored-similarity matching is on the roadmap.
 - **Benchmark is 19 pages.** Patterns covered: CSS hiding, positioning, occlusion, ancestor attributes, traversal (Shadow DOM + iframe), non-interactive controls, and the real DOM emitted by Radix Dialog, MUI Modal, Ant Design Drawer, Headless UI Combobox, and a long scrollable list. Patterns not yet covered: virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift. Expanding before any "production-ready" claim.
-- **Bench adapters for Chrome DevTools MCP and Vercel agent-browser are not yet implemented.** The Playwright MCP adapter ships in `bench/adapters/`.
+- **Bench coverage is three external tools.** Playwright MCP, Chrome DevTools MCP, and Vercel agent-browser adapters ship in `bench/adapters/`; other agent-browser stacks are not yet benchmarked.
 
 ## Reproducing the benchmarks
 
@@ -216,10 +225,16 @@ playwright install chromium
 perceive-bench list pages
 perceive-bench list adapters
 
-# Run the head-to-head against Playwright MCP yourself.
-# Requires Node.js + npx; the first invocation downloads @playwright/mcp.
+# Run the head-to-head against the other tools yourself.
+# Requires Node.js + npx; the first invocation downloads each package.
+# chrome_devtools_mcp and agent_browser also need a local Chrome to drive
+# (agent-browser: `npm i -g agent-browser && agent-browser install`).
 perceive-bench run --adapter playwright_mcp --suite reachability
 perceive-bench run --adapter playwright_mcp --suite tokens
+perceive-bench run --adapter chrome_devtools_mcp --suite reachability
+perceive-bench run --adapter chrome_devtools_mcp --suite tokens
+perceive-bench run --adapter agent_browser --suite reachability
+perceive-bench run --adapter agent_browser --suite tokens
 
 # Same against perceive.
 perceive-bench run --adapter perceive --suite reachability
@@ -233,7 +248,7 @@ All results are written to `results/` as JSON.
 
 Ordered by priority; version assignments are deliberately unpinned because the v0.1 → v0.3 sequence already taught us that pinning features to specific versions is a promise the codebase will break.
 
-- **Next.** Bench adapters for Chrome DevTools MCP and Vercel agent-browser; expanded conformance corpus (virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift).
+- **Next.** Expanded conformance corpus (virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift).
 - **Then.** `include_text=True` body capture; scored-similarity ref matching so elements whose accessible name changes mid-session keep their refs; an MCP server adapter so non-Python agents can consume `perceive` directly.
 - **Later.** Experimental desktop perception: macOS (AXUIElement), Windows (UIA), Linux (AT-SPI), all behind the same `State` / `Element` shape. Read-only first; desktop `act()` ships separately.
 - **Beyond.** Vision fallback as a plugin API (`target.set_vision_backend(...)`), with a first small-VLM backend for canvas-heavy and non-accessible regions.
