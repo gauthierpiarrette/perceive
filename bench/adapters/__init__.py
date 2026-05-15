@@ -32,10 +32,22 @@ def _playwright_mcp_loader():
     return PlaywrightMCPAdapter
 
 
+def _chrome_devtools_mcp_loader():
+    from bench.adapters.chrome_devtools_mcp import ChromeDevToolsMCPAdapter
+    return ChromeDevToolsMCPAdapter
+
+
+def _agent_browser_loader():
+    from bench.adapters.agent_browser import AgentBrowserAdapter
+    return AgentBrowserAdapter
+
+
 REGISTRY: dict[str, Callable[[], type[PerceptionAdapter]]] = {
     "playwright_baseline": _lazy(_playwright_baseline_loader),
     "playwright_filtered": _lazy(_playwright_filtered_loader),
     "playwright_mcp": _lazy(_playwright_mcp_loader),
+    "chrome_devtools_mcp": _lazy(_chrome_devtools_mcp_loader),
+    "agent_browser": _lazy(_agent_browser_loader),
     "perceive": _lazy(_perceive_loader),
 }
 
