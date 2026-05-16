@@ -183,6 +183,19 @@ Register it with your MCP client (stdio transport):
 }
 ```
 
+That assumes `perceive-mcp` is on your `PATH`. If it isn't, or you would rather not install it globally, run it with [`uvx`](https://docs.astral.sh/uv/) instead:
+
+```json
+{
+  "mcpServers": {
+    "perceive": {
+      "command": "uvx",
+      "args": ["--from", "perceive[mcp]", "perceive-mcp"]
+    }
+  }
+}
+```
+
 The server exposes six tools:
 
 | Tool | What it does |

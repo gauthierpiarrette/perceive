@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-05-16
+
+### Fixed
+- `perceive-mcp` no longer dumps an import-time traceback when the optional `mcp` dependency is missing. It now prints a clean one-line install hint and exits non-zero, and `perceive.mcp` stays importable without the extra.
+
+### Added
+- `perceive-mcp --help` now prints usage and a one-paragraph description of the server (previously it exited silently with no output).
+
+### Docs
+- README: added a `uvx` invocation for the MCP server config, so registration works even when `perceive-mcp` is not on `PATH`.
+
 ## [0.4.0] — 2026-05-16
 
 ### Added
@@ -156,6 +167,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.4.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.1...v0.3.2

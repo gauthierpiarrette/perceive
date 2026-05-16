@@ -29,17 +29,32 @@ calls queue cleanly with no locks.
 
 from __future__ import annotations
 
+import argparse
 import asyncio
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 try:
     from mcp.server.fastmcp import FastMCP
-except ImportError as exc:  # pragma: no cover - only hit without the extra
-    raise ImportError(
-        "perceive-mcp requires the optional 'mcp' dependency. "
-        "Install it with:  pip install 'perceive[mcp]'"
-    ) from exc
+
+    _MCP_IMPORT_ERROR: Optional[ImportError] = None
+except ImportError as exc:  # pragma: no cover - exercised only without the extra
+    # Keep the module importable without the optional 'mcp' dependency. The stub
+    # lets the module-level `app` and `@app.tool()` decorators below evaluate;
+    # `main()` then turns the missing dependency into a clean one-line error
+    # rather than an import-time traceback.
+    _MCP_IMPORT_ERROR = exc
+
+    class FastMCP:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        def tool(self, *args, **kwargs):
+            return lambda fn: fn
+
+        def run(self, *args, **kwargs) -> None:
+            pass
 
 # Aliased: the module also defines a tool function named `perceive`, which
 # would otherwise shadow this import.
@@ -188,6 +203,25 @@ async def press(key: str) -> str:
 
 def main() -> None:
     """Entry point for the ``perceive-mcp`` console script."""
+    argparse.ArgumentParser(
+        prog="perceive-mcp",
+        description=(
+            "Run perceive as a Model Context Protocol server over stdio. "
+            "Exposes a browser through perceive's reachability-filtered action "
+            "space (tools: navigate, perceive, click, type, scroll, press). "
+            "Launch this from an MCP client (Claude Code, Claude Desktop, "
+            "Cursor) rather than running it directly; see "
+            "https://github.com/gauthierpiarrette/perceive#mcp-server."
+        ),
+    ).parse_args()
+
+    if _MCP_IMPORT_ERROR is not None:
+        sys.stderr.write(
+            "perceive-mcp requires the optional 'mcp' dependency.\n"
+            "Install it with:  pip install 'perceive[mcp]'\n"
+        )
+        raise SystemExit(1)
+
     try:
         app.run("stdio")
     finally:
