@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-16
+
+### Added
+- **MCP server** (`perceive.mcp`, console script `perceive-mcp`) — exposes perceive over the Model Context Protocol so any MCP client (Claude Code, Claude Desktop, Cursor) can drive a browser through perceive's reachability-filtered action space over stdio. Six tools: `navigate`, `perceive`, `click`, `type`, `scroll`, `press`; the four action tools return a compact `state.diff()` of what changed rather than a fresh full snapshot. Built on the official `mcp` SDK (FastMCP). perceive's sync `BrowserTarget` is confined to a single dedicated worker thread, so it composes with the server's asyncio event loop and every browser operation is serialized without locks. Ships under a new `perceive[mcp]` extra; `mcp` is not a base dependency. Covered by `tests/test_mcp_server.py`.
+- **`perceive_mcp` bench adapter** (`bench/adapters/perceive_mcp.py`) — drives `perceive`'s own MCP server (`python -m perceive.mcp`) through the bench over stdio, so the head-to-head is MCP-server-to-MCP-server rather than library-versus-servers. Reuses the shared `_mcp_stdio.py` client; one server subprocess per page. perceive as an MCP server scores the same 0 / 26 false positives and 14 median tokens as the library — the reachability result is unchanged by the MCP transport.
+
 ## [0.3.3] — 2026-05-15
 
 ### Added
@@ -150,6 +156,7 @@ Measured on the 14-page conformance suite. The baseline models the failure patte
 
 Determinism: 1.000 mean exact-match rate across 14 pages × 5 runs each.
 
+[0.4.0]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gauthierpiarrette/perceive/compare/v0.3.0...v0.3.1

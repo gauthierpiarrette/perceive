@@ -27,6 +27,11 @@ def _perceive_loader():
     return PerceiveAdapter
 
 
+def _perceive_mcp_loader():
+    from bench.adapters.perceive_mcp import PerceiveMCPAdapter
+    return PerceiveMCPAdapter
+
+
 def _playwright_mcp_loader():
     from bench.adapters.playwright_mcp import PlaywrightMCPAdapter
     return PlaywrightMCPAdapter
@@ -49,6 +54,7 @@ REGISTRY: dict[str, Callable[[], type[PerceptionAdapter]]] = {
     "chrome_devtools_mcp": _lazy(_chrome_devtools_mcp_loader),
     "agent_browser": _lazy(_agent_browser_loader),
     "perceive": _lazy(_perceive_loader),
+    "perceive_mcp": _lazy(_perceive_mcp_loader),
 }
 
 

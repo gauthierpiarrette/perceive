@@ -59,6 +59,8 @@ All three tools miss the same core geometry the accessibility tree doesn't encod
 
 **Scope of claim.** This is a reachability conformance benchmark, not a general claim about Playwright. Playwright remains the execution layer `perceive`'s browser backend builds on; this measures the *observation* layer.
 
+The `perceive_mcp` bench adapter runs the same suite against `perceive`'s own [MCP server](#mcp-server): it scores the same 0 / 26 false positives and 14 median tokens as the `perceive` row above, so the reachability result holds through the MCP transport. An MCP server keeps the browser warm across tool calls, so the browser-launch cost is paid once per session, not per call.
+
 ## Install
 
 ```bash
@@ -160,6 +162,40 @@ Respond with one action per line."""
     # … 5 unchanged
 ```
 
+## MCP server
+
+`perceive` ships an MCP server, so any MCP client (Claude Code, Claude Desktop, Cursor) can drive a browser through the same reachability-filtered action space without writing any Python.
+
+```bash
+pip install 'perceive[mcp]'
+playwright install chromium
+```
+
+Register it with your MCP client (stdio transport):
+
+```json
+{
+  "mcpServers": {
+    "perceive": {
+      "command": "perceive-mcp"
+    }
+  }
+}
+```
+
+The server exposes six tools:
+
+| Tool | What it does |
+|---|---|
+| `navigate(url)` | Open a URL; returns the reachability-filtered snapshot |
+| `perceive()` | Re-observe the current page |
+| `click(ref)` | Click an element by ref |
+| `type(ref, text)` | Type text into an element by ref |
+| `scroll(direction, amount)` | Scroll the page |
+| `press(key)` | Press a key (`Enter`, `Tab`, ...) |
+
+`navigate` and `perceive` return the full compact snapshot; the four action tools return a diff of what changed, so the model sees only the delta after each step.
+
 ## API
 
 ```python
@@ -249,7 +285,7 @@ All results are written to `results/` as JSON.
 Ordered by priority; version assignments are deliberately unpinned because the v0.1 → v0.3 sequence already taught us that pinning features to specific versions is a promise the codebase will break.
 
 - **Next.** Expanded conformance corpus (virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift).
-- **Then.** `include_text=True` body capture; scored-similarity ref matching so elements whose accessible name changes mid-session keep their refs; an MCP server adapter so non-Python agents can consume `perceive` directly.
+- **Then.** `include_text=True` body capture; scored-similarity ref matching so elements whose accessible name changes mid-session keep their refs.
 - **Later.** Experimental desktop perception: macOS (AXUIElement), Windows (UIA), Linux (AT-SPI), all behind the same `State` / `Element` shape. Read-only first; desktop `act()` ships separately.
 - **Beyond.** Vision fallback as a plugin API (`target.set_vision_backend(...)`), with a first small-VLM backend for canvas-heavy and non-accessible regions.
 

@@ -1,6 +1,6 @@
 [project]
 name = "perceive"
-version = "0.3.3"
+version = "0.4.0"
 description = "Compact, ref-stable, reachability-filtered perception for AI browser agents"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,13 +36,18 @@ Documentation = "https://github.com/gauthierpiarrette/perceive#readme"
 bench = [
     "tiktoken>=0.7",
 ]
+mcp = [
+    "mcp>=1.27",
+]
 dev = [
     "pytest>=7",
     "tiktoken>=0.7",
+    "mcp>=1.27",
 ]
 
 [project.scripts]
 perceive-bench = "bench.cli:main"
+perceive-mcp = "perceive.mcp:main"
 
 [build-system]
 requires = ["hatchling"]
