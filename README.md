@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo.png" alt="perceive" width="200">
+<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo.png" alt="perceive" width="320">
 
 **AI browser agents click things that aren't actually clickable.**
 
@@ -18,7 +18,19 @@
   <img alt="perceive filters raw browser state (closed drawers, modal-occluded controls, off-screen elements) into a compact reachable action space the agent consumes." src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-light.png">
 </picture>
 
-`perceive` is a Python library that filters them out. Closed drawers, modal-occluded buttons, `inert` subtrees, off-screen transforms: gone before the model sees the snapshot. What's left is a compact, ref-stable action space the model can plan against, plus `state.diff()` for confirming what changed after each action.
+`perceive` is a Python library that gives browser agents a reachability-filtered action space. Closed drawers, modal-occluded buttons, `inert` subtrees, off-screen transforms: gone before the model sees the snapshot. The result is compact and ref-stable, with `state.diff()` to confirm what changed after each action.
+
+- **Fewer wrong actions.** The model only sees elements a user could actually reach, so it stops trying to click controls behind modals or inside closed drawers. `perceive` surfaces 0 of 26 unreachable elements; other browser-agent tools surface 15 to 18.
+- **Fewer tokens.** The snapshot is just the reachable action space, nothing else: 14 tokens per page, against 52 to 195 for other browser-agent tools.
+
+Use it as a Python library, or run it as an [MCP server](#mcp-server) so clients like Claude Code, Claude Desktop, and Cursor can drive a browser with no code.
+
+## Quickstart
+
+```bash
+pip install perceive
+playwright install chromium    # ~100 MB Chromium binary
+```
 
 ```python
 import perceive
@@ -50,20 +62,11 @@ Measured on a 19-page hand-labeled reachability conformance suite (`bench/`): 14
 | Vercel agent-browser (`agent-browser`) | 0.694 | 0.819 | 15 / 26 | 52 | 2287 ms |
 | **`perceive`** | **1.000** | **1.000** | **0 / 26** | **14** | **1605 ms** |
 
-*Recall is 1.000 for all five adapters; the gap is precision, not coverage.*
-
-*Tokens are the agent-facing snapshot only (`state.to_prompt()` for perceive, `browser_snapshot` for Playwright MCP, `take_snapshot` for Chrome DevTools MCP, `snapshot -i` for agent-browser); prompt context is excluded. Latency is per-call wall time including a fresh browser launch; a long-lived server or daemon would close most of that gap. The false-positive and token numbers are unaffected.*
-
 The three browser-agent tools miss the same geometry the accessibility tree doesn't encode: modal occlusion, sticky-header overlap, off-screen transforms, parent-overflow clipping. The gap is reachability, not snapshot size. `perceive` runs an explicit reachability pass and resolves all of them, deterministically: 1.000 exact match across 19 pages × 5 runs.
 
+*Recall is 1.000 for all five adapters, so the gap is precision, not coverage. Tokens count the agent-facing snapshot only (each tool's native snapshot call), prompt context excluded. Latency is per-call wall time including a fresh browser launch, which a long-lived server would mostly amortize away.*
+
 **Scope of claim.** This is a reachability conformance benchmark, not a general claim about Playwright. Playwright remains the execution layer `perceive`'s browser backend builds on; this measures the *observation* layer.
-
-## Install
-
-```bash
-pip install perceive
-playwright install chromium    # ~100 MB Chromium binary
-```
 
 ## Three things `perceive` does that a raw accessibility tree does not
 
@@ -251,14 +254,12 @@ obs.before, obs.after, obs.diff
 
 This is a deliberately narrow early release. Things `perceive` does **not** do yet:
 
-- **Browser only.** A macOS backend (`perceive.macos()`) is on the roadmap but not yet implemented.
-- **Chromium only.** Playwright supports Firefox and WebKit but neither is tested against the benchmark suite.
-- **No vision fallback.** Canvas-heavy UIs, custom widgets without ARIA, and image-only elements will return as fewer (or zero) elements. A small-VLM fallback is on the roadmap.
-- **Cross-origin iframes cannot be introspected** (browser security; same-origin iframes work).
-- **Closed Shadow DOM cannot be traversed** (`{ mode: 'closed' }` is opaque by design). Open shadow roots work.
-- **Ref stability is exact-fingerprint based.** A button whose accessible name changes mid-session ("Save" → "Saving…") will get a new ref. Scored-similarity matching is on the roadmap.
-- **Benchmark is 19 pages.** Patterns covered: CSS hiding, positioning, occlusion, ancestor attributes, traversal (Shadow DOM + iframe), non-interactive controls, and the real DOM emitted by Radix Dialog, MUI Modal, Ant Design Drawer, Headless UI Combobox, and a long scrollable list. Patterns not yet covered: virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift. Expanding before any "production-ready" claim.
-- **Bench coverage is three external tools.** Playwright MCP, Chrome DevTools MCP, and Vercel agent-browser adapters ship in `bench/adapters/`; other agent-browser stacks are not yet benchmarked.
+- **Browser only.** A macOS backend (`perceive.macos()`) is planned but not yet implemented.
+- **Chromium only.** Firefox and WebKit are untested against the benchmark suite.
+- **No vision fallback.** Canvas-heavy UIs, custom widgets without ARIA, and image-only elements return as fewer (or zero) elements. A small-VLM fallback is planned.
+- **Cross-origin iframes and closed Shadow DOM are opaque** (browser security, and `{ mode: 'closed' }` by design). Same-origin iframes and open shadow roots work.
+- **Ref stability is exact-fingerprint based.** A button whose accessible name changes mid-session ("Save" → "Saving…") gets a new ref. Scored-similarity matching is planned.
+- **Benchmark is 19 pages and three external tools.** It covers CSS hiding, positioning, occlusion, traversal (Shadow DOM + iframe), and real component libraries (Radix, MUI, Ant Design, Headless UI); it does not yet cover virtualized lists, portals, nested modals, or cookie banners. Expanding before any "production-ready" claim.
 
 ## Reproducing the benchmarks
 
@@ -291,15 +292,6 @@ perceive-bench run --adapter perceive --suite determinism --runs 5
 ```
 
 All results are written to `results/` as JSON.
-
-## Roadmap
-
-Ordered by priority; version assignments are deliberately unpinned because the v0.1 → v0.4 sequence already taught us that pinning features to specific versions is a promise the codebase will break.
-
-- **Next.** Expanded conformance corpus (virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift).
-- **Then.** `include_text=True` body capture; scored-similarity ref matching so elements whose accessible name changes mid-session keep their refs.
-- **Later.** Experimental desktop perception: macOS (AXUIElement), Windows (UIA), Linux (AT-SPI), all behind the same `State` / `Element` shape. Read-only first; desktop `act()` ships separately.
-- **Beyond.** Vision fallback as a plugin API (`target.set_vision_backend(...)`), with a first small-VLM backend for canvas-heavy and non-accessible regions.
 
 ## Contributing
 
