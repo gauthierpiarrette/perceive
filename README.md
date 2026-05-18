@@ -1,6 +1,22 @@
-# perceive
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo.png" alt="perceive" width="200">
 
 **AI browser agents click things that aren't actually clickable.**
+
+[![Star perceive on GitHub](https://img.shields.io/badge/Star%20on%20GitHub-1f6feb?style=for-the-badge&logo=github&logoColor=white)](https://github.com/gauthierpiarrette/perceive)
+
+[![Tests](https://github.com/gauthierpiarrette/perceive/actions/workflows/test.yml/badge.svg)](https://github.com/gauthierpiarrette/perceive/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/perceive)](https://pypi.org/project/perceive/)
+[![Python](https://img.shields.io/pypi/pyversions/perceive)](https://pypi.org/project/perceive/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/gauthierpiarrette/perceive/blob/main/LICENSE)
+
+</div>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-dark.png">
+  <img alt="perceive filters raw browser state (closed drawers, modal-occluded controls, off-screen elements) into a compact reachable action space the agent consumes." src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-light.png">
+</picture>
 
 `perceive` is a Python library that filters them out. Closed drawers, modal-occluded buttons, `inert` subtrees, off-screen transforms: gone before the model sees the snapshot. What's left is a compact, ref-stable action space the model can plan against, plus `state.diff()` for confirming what changed after each action.
 
@@ -21,13 +37,10 @@ Measured on a 19-page hand-labeled reachability conformance suite (`bench/`): 14
 
 **Three browser-agent observation tools each surface 15 to 18 of 26 unreachable elements as valid agent actions; `perceive` surfaces 0.**
 
-```text
-raw a11y baseline     26 / 26 unreachable surfaced      26 tokens     1363 ms cold-call
-playwright_mcp        18 / 26 unreachable surfaced     195 tokens     3938 ms cold-call
-chrome_devtools_mcp   15 / 26 unreachable surfaced     153 tokens     6937 ms cold-call
-agent_browser         15 / 26 unreachable surfaced      52 tokens     2287 ms cold-call
-perceive               0 / 26 unreachable surfaced      14 tokens     1605 ms cold-call
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/benchmark-dark.png">
+  <img alt="Browser-agent observation tools expose unreachable actions. False-positive actions out of 26: Playwright MCP 18, Chrome DevTools MCP 15, Vercel agent-browser 15, perceive 0. Median observation tokens per page: Playwright MCP 195, Chrome DevTools MCP 153, Vercel agent-browser 52, perceive 14." src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/benchmark-light.png">
+</picture>
 
 | Adapter | Precision | F1 | False-positive actions | Median observation tokens / page | Median cold-call latency |
 |---|---:|---:|---:|---:|---:|
@@ -39,27 +52,11 @@ perceive               0 / 26 unreachable surfaced      14 tokens     1605 ms co
 
 *Recall is 1.000 for all five adapters; the gap is precision, not coverage.*
 
-```text
-$ perceive-bench run --adapter playwright_mcp --suite reachability
-  precision : 0.654    FP: 18 / 26    median tokens: 195    median cold-call latency: 3938 ms
-
-$ perceive-bench run --adapter chrome_devtools_mcp --suite reachability
-  precision : 0.694    FP: 15 / 26    median tokens: 153    median cold-call latency: 6937 ms
-
-$ perceive-bench run --adapter agent_browser --suite reachability
-  precision : 0.694    FP: 15 / 26    median tokens:  52    median cold-call latency: 2287 ms
-
-$ perceive-bench run --adapter perceive --suite reachability
-  precision : 1.000    FP:  0 / 26    median tokens:  14    median cold-call latency: 1605 ms
-```
-
 *Tokens are the agent-facing snapshot only (`state.to_prompt()` for perceive, `browser_snapshot` for Playwright MCP, `take_snapshot` for Chrome DevTools MCP, `snapshot -i` for agent-browser); prompt context is excluded. Latency is per-call wall time including a fresh browser launch; a long-lived server or daemon would close most of that gap. The false-positive and token numbers are unaffected.*
 
-All three tools miss the same core geometry the accessibility tree doesn't encode, on synthetic pages and real component libraries alike (Radix Dialog, MUI Modal, Ant Design Drawer): modal occlusion, sticky-header overlap, off-screen transforms, parent-overflow clipping. Chrome DevTools MCP and agent-browser read Chrome's native accessibility tree and land on identical false-positive profiles; Playwright MCP additionally keeps `inert` and `aria-hidden` subtrees the other two drop. agent-browser is by far the most token-frugal of the three and still surfaces 15 of 26: the gap is reachability, not snapshot size. `perceive` runs an explicit reachability pass and resolves all of them. Determinism across 19 pages × 5 runs: 1.000 exact match.
+The three browser-agent tools miss the same geometry the accessibility tree doesn't encode: modal occlusion, sticky-header overlap, off-screen transforms, parent-overflow clipping. The gap is reachability, not snapshot size. `perceive` runs an explicit reachability pass and resolves all of them, deterministically: 1.000 exact match across 19 pages × 5 runs.
 
 **Scope of claim.** This is a reachability conformance benchmark, not a general claim about Playwright. Playwright remains the execution layer `perceive`'s browser backend builds on; this measures the *observation* layer.
-
-The `perceive_mcp` bench adapter runs the same suite against `perceive`'s own [MCP server](#mcp-server): it scores the same 0 / 26 false positives and 14 median tokens as the `perceive` row above, so the reachability result holds through the MCP transport. An MCP server keeps the browser warm across tool calls, so the browser-launch cost is paid once per session, not per call.
 
 ## Install
 
@@ -209,6 +206,8 @@ The server exposes six tools:
 
 `navigate` and `perceive` return the full compact snapshot; the four action tools return a diff of what changed, so the model sees only the delta after each step.
 
+Benchmarked through the MCP transport, `perceive`'s server scores the same 0 / 26 false positives and 14 median tokens as the library (`bench/adapters/perceive_mcp.py`). The reachability result is unchanged by MCP, and because the server keeps the browser warm across tool calls, the browser-launch cost is paid once per session rather than per call.
+
 ## API
 
 ```python
@@ -295,12 +294,16 @@ All results are written to `results/` as JSON.
 
 ## Roadmap
 
-Ordered by priority; version assignments are deliberately unpinned because the v0.1 → v0.3 sequence already taught us that pinning features to specific versions is a promise the codebase will break.
+Ordered by priority; version assignments are deliberately unpinned because the v0.1 → v0.4 sequence already taught us that pinning features to specific versions is a promise the codebase will break.
 
 - **Next.** Expanded conformance corpus (virtualized lists with off-DOM rows, portals, nested modals, cookie banners, animated layout shift).
 - **Then.** `include_text=True` body capture; scored-similarity ref matching so elements whose accessible name changes mid-session keep their refs.
 - **Later.** Experimental desktop perception: macOS (AXUIElement), Windows (UIA), Linux (AT-SPI), all behind the same `State` / `Element` shape. Read-only first; desktop `act()` ships separately.
 - **Beyond.** Vision fallback as a plugin API (`target.set_vision_backend(...)`), with a first small-VLM backend for canvas-heavy and non-accessible regions.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
