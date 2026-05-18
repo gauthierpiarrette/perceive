@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo.png" alt="perceive" width="320">
+<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo-v2.png" alt="perceive" width="320">
 
 **AI browser agents click things that aren't actually clickable.**
 
