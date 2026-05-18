@@ -1,6 +1,6 @@
 # Contributing to perceive
 
-Thanks for considering a contribution. `perceive` is small on purpose — the simplest patch is usually the right one.
+Thanks for considering a contribution. `perceive` is small on purpose.
 
 ## Quick start
 
