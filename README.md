@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo-v2.png" alt="perceive" width="320">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo-dark-v2.png">
+  <img src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/logo-v2.png" alt="perceive" width="320">
+</picture>
 
 **AI browser agents click things that aren't actually clickable.**
 
@@ -14,8 +17,8 @@
 </div>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-dark.png">
-  <img alt="perceive filters raw browser state (closed drawers, modal-occluded controls, off-screen elements) into a compact reachable action space the agent consumes." src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-dark-v2.png">
+  <img alt="perceive filters raw browser state (closed drawers, modal-occluded controls, off-screen elements) into a compact reachable action space the agent consumes." src="https://raw.githubusercontent.com/gauthierpiarrette/perceive/main/assets/overview-light-v2.png">
 </picture>
 
 `perceive` is a Python library that gives browser agents a reachability-filtered action space. Closed drawers, modal-occluded buttons, `inert` subtrees, off-screen transforms: gone before the model sees the snapshot. The result is compact and ref-stable, with `state.diff()` to confirm what changed after each action.
