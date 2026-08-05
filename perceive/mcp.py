@@ -44,6 +44,15 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
     # lets the module-level `app` and `@app.tool()` decorators below evaluate;
     # `main()` then turns the missing dependency into a clean one-line error
     # rather than an import-time traceback.
+    try:  # distinguish "not installed" from "incompatible 2.x installed"
+        import importlib.metadata as _im
+        _v = _im.version("mcp")
+        exc = ImportError(
+            f"installed mcp SDK {_v} is not supported yet (FastMCP was removed "
+            f"in mcp 2.0). Install a 1.x SDK:  pip install 'mcp>=1.27,<2'"
+        )
+    except Exception:
+        pass
     _MCP_IMPORT_ERROR = exc
 
     class FastMCP:  # type: ignore[no-redef]
